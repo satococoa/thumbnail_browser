@@ -7,4 +7,10 @@ Bundler.require :default
 Motion::Project::App.setup do |app|
   # Use `rake config' to see complete project settings.
   app.name = 'thumbnail_browser'
+
+  app.pods do
+    dependency 'JSONKit'
+    dependency 'AFNetworking'
+    dependency 'ElementParser'
+  end
 end

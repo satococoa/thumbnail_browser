@@ -15,14 +15,25 @@ class ThumbnailsController < UIViewController
     self
   end
 
-  def viewDidLoad
+  def viewWillAppear(animated)
+    super
     # 画像のURLのみを抜き出す
-    # 非同期でやりたいけど、とりあえず同期処理で
     request = NSURLRequest.requestWithURL(@url)
     operation = AFHTTPRequestOperation.alloc.initWithRequest(request)
     operation.setCompletionBlockWithSuccess(
       lambda {|operation, response|
         str = operation.responseString
+        str += '<a href="/images/test.png"><img src="/images/test_thumb.png"></a>'
+        # 正規表現ではなくしたい
+        images = str.scan(
+          %r!\<a +href=(?:"|')?([^'"<>]+?\.(?:png|jpg|jpeg|gif))(?:"|')?.*?\>!m).to_a
+        unless images.empty?
+          images.each do |img|
+            url = NSURL.URLWithString(img[0])
+            p url.pathComponents
+            p "URL: #{url.absoluteString}"
+          end
+        end
       },
       failure:lambda {|operation, error|
         p "Operation Error: #{error}"

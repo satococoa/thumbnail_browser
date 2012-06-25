@@ -51,15 +51,15 @@ class BrowserController < UIViewController
   end
 
   def webViewDidStartLoad(webView)
-    loading_changed(webView)
+    loading_changed_loading(webView)
   end
 
   def webViewDidFinishLoad(webView)
-    loading_changed(webView)
+    loading_changed_not_loading(webView)
   end
 
   def webView(webView, didFailLoadWithError:error)
-    loading_changed(webView)
+    loading_changed_not_loading(webView)
     p error.code, error.domain, error.userInfo, error.localizedDescription
     App.alert(error.localizedDescription) if error.code != NSURLErrorCancelled
   end
@@ -112,33 +112,33 @@ class BrowserController < UIViewController
     ]
   end
 
-  def loading_changed(webView)
-    if webView.loading?
-      if @loading_count == 0
-        UIApplication.sharedApplication.networkActivityIndicatorVisible = true
-        self.toolbarItems = [
-          @back_button,
-          @forward_button,
-          @spacer,
-          @stop_button
-        ]
-      end
-      @loading_count += 1
-    else
-      if @loading_count > 0
-        @loading_count -= 1
-        if @loading_count == 0
-          @back_button.enabled = webView.canGoBack
-          @forward_button.enabled = webView.canGoForward
-          self.toolbarItems = [
-            @back_button,
-            @forward_button,
-            @spacer,
-            @refresh_button
-          ]
-          UIApplication.sharedApplication.networkActivityIndicatorVisible = false
-        end
-      end
+  def loading_changed_loading(webView)
+    if @loading_count == 0
+      UIApplication.sharedApplication.networkActivityIndicatorVisible = true
+      self.toolbarItems = [
+        @back_button,
+        @forward_button,
+        @spacer,
+        @stop_button
+      ]
     end
+    @loading_count += 1
+  end
+
+  def loading_changed_not_loading(webView)
+   if @loading_count > 0
+    @loading_count -= 1
+    if @loading_count == 0
+      @back_button.enabled = webView.canGoBack
+      @forward_button.enabled = webView.canGoForward
+      self.toolbarItems = [
+        @back_button,
+        @forward_button,
+        @spacer,
+        @refresh_button
+      ]
+      UIApplication.sharedApplication.networkActivityIndicatorVisible = false
+    end
+  end
   end
 end

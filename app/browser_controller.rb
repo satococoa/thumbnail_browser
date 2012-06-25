@@ -11,6 +11,7 @@ class BrowserController < UIViewController
         v.backgroundColor = UIColor.whiteColor
         v.frame = [[0, 0], [320, 460-44*2]]
         v.delegate = self
+        v.scalesPageToFit = true
       end
       view.addSubview(@browser)
       navigationController.toolbarHidden = false
@@ -43,6 +44,9 @@ class BrowserController < UIViewController
   end
 
   def webView(webView, shouldStartLoadWithRequest:request, navigationType:navigationType)
+    if navigationType != UIWebViewNavigationTypeOther
+      @url_field.text = request.mainDocumentURL.absoluteString
+    end
     true
   end
 
@@ -79,6 +83,7 @@ class BrowserController < UIViewController
       f.keyboardType = UIKeyboardTypeURL
       f.returnKeyType = UIReturnKeyGo
       f.delegate = self
+      f.text = HOME_URL
     end
     navigationItem.titleView = @url_field
 
@@ -120,20 +125,19 @@ class BrowserController < UIViewController
       end
       @loading_count += 1
     else
-      @loading_count -= 1 if @loading_count > 0
-      if @loading_count == 0
-        @back_button.enabled = webView.canGoBack
-        @forward_button.enabled = webView.canGoForward
-        self.toolbarItems = [
-          @back_button,
-          @forward_button,
-          @spacer,
-          @refresh_button
-        ]
-        unless webView.request.mainDocumentURL.nil?
-          @url_field.text = webView.request.mainDocumentURL.absoluteString
+      if @loading_count > 0
+        @loading_count -= 1
+        if @loading_count == 0
+          @back_button.enabled = webView.canGoBack
+          @forward_button.enabled = webView.canGoForward
+          self.toolbarItems = [
+            @back_button,
+            @forward_button,
+            @spacer,
+            @refresh_button
+          ]
+          UIApplication.sharedApplication.networkActivityIndicatorVisible = false
         end
-        UIApplication.sharedApplication.networkActivityIndicatorVisible = false
       end
     end
   end

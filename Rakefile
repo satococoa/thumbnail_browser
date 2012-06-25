@@ -11,6 +11,5 @@ Motion::Project::App.setup do |app|
   app.pods do
     dependency 'JSONKit'
     dependency 'AFNetworking'
-    dependency 'ElementParser'
   end
 end

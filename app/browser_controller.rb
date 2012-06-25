@@ -43,6 +43,12 @@ class BrowserController < UIViewController
     @browser.reload
   end
 
+  def open_thumbnail_view
+    @thumbnails_controller ||= ThumbnailsController.new
+    @thumbnails_controller.url = @browser.request.mainDocumentURL.tap{|u| p u}
+    presentModalViewController(@thumbnails_controller, animated:true)
+  end
+
   def webView(webView, shouldStartLoadWithRequest:request, navigationType:navigationType)
     if navigationType != UIWebViewNavigationTypeOther
       @url_field.text = request.mainDocumentURL.absoluteString
@@ -103,10 +109,13 @@ class BrowserController < UIViewController
     @stop_button = UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemStop, target:self, action:'stop_loading').tap do |b|
       b.style = UIBarButtonItemStyleBordered
     end
+    @thumbnail_button = UIBarButtonItem.alloc.initWithTitle('THUMB', style:UIBarButtonItemStyleBordered, target:self, action:'open_thumbnail_view')
 
     self.toolbarItems = [
       @back_button,
       @forward_button,
+      @spacer,
+      @thumbnail_button,
       @spacer,
       @refresh_button
     ]
@@ -118,6 +127,8 @@ class BrowserController < UIViewController
       self.toolbarItems = [
         @back_button,
         @forward_button,
+        @spacer,
+        @thumbnail_button,
         @spacer,
         @stop_button
       ]
@@ -134,6 +145,8 @@ class BrowserController < UIViewController
       self.toolbarItems = [
         @back_button,
         @forward_button,
+        @spacer,
+        @thumbnail_button,
         @spacer,
         @refresh_button
       ]

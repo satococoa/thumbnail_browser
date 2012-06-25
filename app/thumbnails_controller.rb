@@ -16,7 +16,18 @@ class ThumbnailsController < UIViewController
   end
 
   def viewDidLoad
-    p @url
+    # 画像のURLのみを抜き出す
+    # 非同期でやりたいけど、とりあえず同期処理で
+    request = NSURLRequest.requestWithURL(@url)
+    operation = AFHTTPRequestOperation.alloc.initWithRequest(request)
+    operation.setCompletionBlockWithSuccess(
+      lambda {|operation, response|
+        str = operation.responseString
+      },
+      failure:lambda {|operation, error|
+        p "Operation Error: #{error}"
+      })
+    operation.start
   end
 
   def close

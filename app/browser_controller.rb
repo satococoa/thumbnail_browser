@@ -45,7 +45,7 @@ class BrowserController < UIViewController
 
   def open_thumbnail_view
     @thumbnails_controller ||= ThumbnailsController.new
-    @thumbnails_controller.url = @browser.request.mainDocumentURL.tap{|u| p u}
+    @thumbnails_controller.url = @browser.request.mainDocumentURL
     presentModalViewController(@thumbnails_controller, animated:true)
   end
 

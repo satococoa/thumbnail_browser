@@ -57,7 +57,6 @@ class ThumbnailsController < UIViewController
           p error.code, error.domain, error.userInfo, error.localizedDescription
         end
 
-        i = 0
         links.each do |link|
           url = NSURL.URLWithString(link.stringValue)
           url = NSURL.URLWithString(url.path, relativeToURL:@url) if url.scheme !~ /^https?$/

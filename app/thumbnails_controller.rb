@@ -22,9 +22,8 @@ class ThumbnailsController < UIViewController
     operation = AFHTTPRequestOperation.alloc.initWithRequest(request)
     operation.setCompletionBlockWithSuccess(
       lambda {|operation, response|
-        str = operation.responseString
         error_ptr = Pointer.new(:object)
-        parser = HTMLParser.alloc.initWithString(str, error:error_ptr)
+        parser = HTMLParser.alloc.initWithString(operation.responseString, error:error_ptr)
 
         error = error_ptr[0]
         unless error.nil?

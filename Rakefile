@@ -11,6 +11,6 @@ Motion::Project::App.setup do |app|
   app.pods do
     dependency 'JSONKit'
     dependency 'AFNetworking'
-    dependency 'Objective-C-HMTL-Parser'
+    dependency 'GDataXML-HTML'
   end
 end

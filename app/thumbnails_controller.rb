@@ -23,20 +23,23 @@ class ThumbnailsController < UIViewController
     operation.setCompletionBlockWithSuccess(
       lambda {|operation, response|
         error_ptr = Pointer.new(:object)
-        parser = HTMLParser.alloc.initWithString(operation.responseString, error:error_ptr)
-
+        doc = GDataXMLDocument.alloc.initWithHTMLData(operation.responseData,
+          options:0, error:error_ptr)
         error = error_ptr[0]
         unless error.nil?
           p error.code, error.domain, error.userInfo, error.localizedDescription
-          return
         end
 
-        body = parser.body
-        links = body.findChildTags('a')
+        xpath = "//a[contains(@href, '.jpg') or contains(@href, '.jpeg') or contains(@href, '.png') or contains(@href, '.gif')]/@href"
+
+        error_ptr = Pointer.new(:object)
+        links = doc.nodesForXPath(xpath, error:error_ptr)
+        unless error.nil?
+          p error.code, error.domain, error.userInfo, error.localizedDescription
+        end
+
         links.each do |link|
-          url = NSURL.URLWithString(link.getAttributeNamed('href'))
-          next if url.nil?
-          next unless ['jpg', 'jpeg', 'png', 'gif'].include?(url.pathExtension)
+          url = NSURL.URLWithString(link.stringValue)
           url = NSURL.URLWithString(url.path, relativeToURL:@url) if url.scheme !~ /^https?$/
           p "URL: #{url.absoluteString}"
         end

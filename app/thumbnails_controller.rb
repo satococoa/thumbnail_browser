@@ -23,14 +23,13 @@ class ThumbnailsController < UIViewController
     operation.setCompletionBlockWithSuccess(
       lambda {|operation, response|
         str = operation.responseString
-        str += '<a href="/images/test.png"><img src="/images/test_thumb.png"></a>'
         # 正規表現ではなくしたい
         images = str.scan(
           %r!\<a +href=(?:"|')?([^'"<>]+?\.(?:png|jpg|jpeg|gif))(?:"|')?.*?\>!m).to_a
         unless images.empty?
           images.each do |img|
             url = NSURL.URLWithString(img[0])
-            p url.pathComponents
+            url = NSURL.URLWithString(url.path, relativeToURL:@url) if url.scheme !~ /^https?$/
             p "URL: #{url.absoluteString}"
           end
         end

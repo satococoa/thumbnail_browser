@@ -18,36 +18,35 @@ class ThumbnailsController < UIViewController
   def viewWillAppear(animated)
     super
     # 画像のURLのみを抜き出す
-    parser = NSXMLParser.alloc.initWithContentsOfURL(@url)
-    parser.delegate = self
-    parser.parse
-
-=begin
     request = NSURLRequest.requestWithURL(@url)
     operation = AFHTTPRequestOperation.alloc.initWithRequest(request)
     operation.setCompletionBlockWithSuccess(
       lambda {|operation, response|
         str = operation.responseString
-        parser = NSXMLParser.alloc.initWithData(operation.responseData)
-        parser.delegate = self
-        parser.parse
+        error_ptr = Pointer.new(:object)
+        parser = HTMLParser.alloc.initWithString(str, error:error_ptr)
 
-        正規表現ではなくしたい
-        images = str.scan(
-          %r!\<a +href=(?:"|')?([^'"<>]+?\.(?:png|jpg|jpeg|gif))(?:"|')?.*?\>!m).to_a
-        unless images.empty?
-          images.each do |img|
-            url = NSURL.URLWithString(img[0])
-            url = NSURL.URLWithString(url.path, relativeToURL:@url) if url.scheme !~ /^https?$/
-            p "URL: #{url.absoluteString}"
-          end
+        error = error_ptr[0]
+        unless error.nil?
+          p error.code, error.domain, error.userInfo, error.localizedDescription
+          return
+        end
+
+        body = parser.body
+        links = body.findChildTags('a')
+        links.each do |link|
+          url = NSURL.URLWithString(link.getAttributeNamed('href'))
+          next if url.nil?
+          next unless ['jpg', 'jpeg', 'png', 'gif'].include?(url.pathExtension)
+          url = NSURL.URLWithString(url.path, relativeToURL:@url) if url.scheme !~ /^https?$/
+          p "URL: #{url.absoluteString}"
         end
       },
       failure:lambda {|operation, error|
-        p "Operation Error: #{error}"
+        p "Operation Error:"
+        p error.code, error.domain, error.userInfo, error.localizedDescription
       })
     operation.start
-=end
   end
 
   def close

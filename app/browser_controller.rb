@@ -1,6 +1,4 @@
 class BrowserController < UIViewController
-  include BW::KVO
-
   HOME_URL = 'http://satococoa.github.com/'
 
   def loadView

@@ -20,13 +20,5 @@ class ImagesController < UIViewController
   def viewWillAppear(animated)
     @images_view.images = @images
     @images_view.setNeedsDisplay
-    # とりあえず表示
-    # TODO: あとでviewでちゃんとやる
-    # req = NSURLRequest.requestWithURL(@images.last)
-    # @image_view.setImageWithURLRequest(req,
-    #   placeholderImage:LOADING_IMAGE,
-    #   success:lambda {|req, res, img| p img },
-    #   failure:lambda {|req, res, error| log_error error }
-    # )
   end
 end

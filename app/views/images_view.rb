@@ -36,8 +36,8 @@ class ImagesView < UIView
     @images.each_with_index do |img, i|
       req = NSURLRequest.requestWithURL(img)
 
-      stage_offset = i * 320 + 10
-      stage_image = UIImageView.alloc.initWithFrame([[stage_offset, 10], [300, 411-20]]).tap do |stg|
+      stage_offset = i * 320
+      stage_image = UIImageView.alloc.initWithFrame([[stage_offset+10, 10], [300, 411-20]]).tap do |stg|
         stg.contentMode = UIViewContentModeScaleAspectFit
         stg.setImageWithURLRequest(req,
           placeholderImage:LOADING_IMAGE,
@@ -47,14 +47,21 @@ class ImagesView < UIView
       end
       @stage.addSubview(stage_image)
 
-      thumb_offset = i/4 * 320 + i%4 * 60 + 50
-      thumb_image = UIImageView.alloc.initWithFrame([[thumb_offset, 5], [40, 40]]).tap do |thumb|
+      thumb_offset = i/4 * 320 + i%4 * 60
+      thumb_image = UIImageView.alloc.initWithFrame([[thumb_offset+50, 5], [40, 40]]).tap do |thumb|
         thumb.contentMode = UIViewContentModeScaleAspectFit
+        thumb.layer.borderColor = UIColor.brownColor.CGColor
         thumb.setImageWithURLRequest(req,
           placeholderImage:LOADING_IMAGE,
           success:lambda {|req, res, img| p img },
           failure:lambda {|req, res, error| log_error error }
         )
+        thumb.whenTapped do
+          @selected.layer.borderWidth = 0 unless @selected.nil?
+          @stage.setContentOffset([stage_offset, 0], animated:true)
+          thumb.layer.borderWidth = 2
+          @selected = thumb
+        end
       end
       @thumbnails.addSubview(thumb_image)
     end

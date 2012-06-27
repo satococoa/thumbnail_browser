@@ -1,7 +1,7 @@
 class BrowserController < UIViewController
   include BW::KVO
 
-  attr_accessor :images
+  attr_accessor :images, :loading_count
 
   # HOME_URL = 'http://satococoa.github.com/'
   HOME_URL = 'http://news4vip.livedoor.biz/archives/51357270.html'
@@ -22,18 +22,20 @@ class BrowserController < UIViewController
 
       # ツールバー、URLバーを配置
       setup_browser_parts
-
-      # image属性をObserve
-      observe(self, 'images') do |old_value, new_value|
-        @thumbnail_button.enabled = !new_value.empty?
-      end
     end
     self
   end
 
   def viewDidLoad
+    # KVO
+    start_observing
+
     req = NSURLRequest.requestWithURL(NSURL.URLWithString(HOME_URL))
     @browser.loadRequest(req)
+  end
+
+  def viewDidUnload
+    unobserve_all
   end
 
   def go_back
@@ -66,15 +68,15 @@ class BrowserController < UIViewController
   end
 
   def webViewDidStartLoad(webView)
-    loading_changed_loading(webView)
+    self.loading_count += 1
   end
 
   def webViewDidFinishLoad(webView)
-    loading_changed_not_loading(webView)
+    self.loading_count -= 1 if self.loading_count > 0
   end
 
   def webView(webView, didFailLoadWithError:error)
-    loading_changed_not_loading(webView)
+    self.loading_count -= 1 if self.loading_count > 0
     log_error error
     App.alert(error.localizedDescription) if error.code != NSURLErrorCancelled
   end
@@ -132,44 +134,44 @@ class BrowserController < UIViewController
     ]
   end
 
-  def loading_changed_loading(webView)
-    if @loading_count == 0
-      UIApplication.sharedApplication.networkActivityIndicatorVisible = true
-      self.toolbarItems = [
-        @back_button,
-        @forward_button,
-        @spacer,
-        @thumbnail_button,
-        @spacer,
-        @stop_button
-      ]
-      self.images = []
+  def start_observing
+    # image属性をObserve
+    observe(self, 'images') do |old_value, new_value|
+      @thumbnail_button.enabled = !new_value.empty?
     end
-    @loading_count += 1
-  end
 
-  def loading_changed_not_loading(webView)
-   if @loading_count > 0
-    @loading_count -= 1
-    if @loading_count == 0
-      @back_button.enabled = webView.canGoBack
-      @forward_button.enabled = webView.canGoForward
-      self.toolbarItems = [
-        @back_button,
-        @forward_button,
-        @spacer,
-        @thumbnail_button,
-        @spacer,
-        @refresh_button
-      ]
-      UIApplication.sharedApplication.networkActivityIndicatorVisible = false
-      # パースが必要なので非同期にする
-      html = webView.stringByEvaluatingJavaScriptFromString('document.documentElement.outerHTML')
-      Dispatch::Queue.main.async {
-        doc = Document.new(html)
-        self.images = doc.image_urls
-      }
+    # loading_count属性をObserve
+    observe(self, 'loading_count') do |old_value, new_value|
+      if old_value > 0 && new_value == 0
+        UIApplication.sharedApplication.networkActivityIndicatorVisible = false
+        @back_button.enabled = @browser.canGoBack
+        @forward_button.enabled = @browser.canGoForward
+        self.toolbarItems = [
+          @back_button,
+          @forward_button,
+          @spacer,
+          @thumbnail_button,
+          @spacer,
+          @refresh_button
+        ]
+        # パースが必要なので非同期にする
+        html = @browser.stringByEvaluatingJavaScriptFromString('document.documentElement.outerHTML')
+        Dispatch::Queue.main.async {
+          doc = Document.new(html)
+          self.images = doc.image_urls
+        }
+      else old_value == 0 && new_value > 0
+        UIApplication.sharedApplication.networkActivityIndicatorVisible = true
+        self.toolbarItems = [
+          @back_button,
+          @forward_button,
+          @spacer,
+          @thumbnail_button,
+          @spacer,
+          @stop_button
+        ]
+        self.images = []
+      end
     end
-  end
   end
 end

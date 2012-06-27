@@ -6,10 +6,12 @@ class ImagesController < UIViewController
 
   def loadView
     if super
+      @thumb_views = []
       view.backgroundColor = UIColor.darkGrayColor
 
       @stage = UIScrollView.alloc.initWithFrame([[0, 0], [320, 411]]).tap do |v|
         v.pagingEnabled = true
+        v.delegate = self
       end
       view.addSubview(@stage)
 
@@ -35,6 +37,14 @@ class ImagesController < UIViewController
   def viewWillAppear(animated)
     super
     load_images
+  end
+
+  def scrollViewDidScroll(scrollView)
+    image_no = (scrollView.contentOffset.x/320.0).ceil
+    @selected.layer.borderWidth = 0 unless @selected.nil?
+    thumb = @thumbnails.subviews[image_no]
+    thumb.layer.borderWidth = 2
+    @selected = thumb
   end
 
   private
@@ -68,12 +78,7 @@ class ImagesController < UIViewController
           success:lambda {|req, res, img| p img },
           failure:lambda {|req, res, error| log_error error }
         )
-        thumb.whenTapped do
-          @selected.layer.borderWidth = 0 unless @selected.nil?
-          @stage.setContentOffset([stage_offset, 0], animated:true)
-          thumb.layer.borderWidth = 2
-          @selected = thumb
-        end
+        thumb.whenTapped { @stage.setContentOffset([stage_offset, 0], animated:true) }
       end
       @thumbnails.addSubview(thumb_image)
     end

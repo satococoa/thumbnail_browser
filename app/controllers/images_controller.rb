@@ -1,4 +1,4 @@
-class ThumbnailsController < UIViewController
+class ImagesController < UIViewController
   # 画像のURL(NSURL)の入った配列
   attr_accessor :images
 
@@ -36,7 +36,8 @@ class ThumbnailsController < UIViewController
   end
 
   def viewWillAppear(animated)
-    placeholder = UIImage.imageNamed('placeholder.png')
+    # とりあえず表示
+    # TODO: あとでviewでちゃんとやる
     req = NSURLRequest.requestWithURL(@images.last)
     @image_view.setImageWithURLRequest(req,
       placeholderImage:LOADING_IMAGE,

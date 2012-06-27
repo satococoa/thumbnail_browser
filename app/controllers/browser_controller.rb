@@ -54,10 +54,10 @@ class BrowserController < UIViewController
     @browser.reload
   end
 
-  def open_thumbnail_view
-    @thumbnails_controller ||= ThumbnailsController.new
-    @thumbnails_controller.images = @images
-    presentModalViewController(@thumbnails_controller, animated:true)
+  def open_images_view
+    @images_controller ||= ImagesController.new
+    @images_controller.images = @images
+    presentModalViewController(@images_controller, animated:true)
   end
 
   def webView(webView, shouldStartLoadWithRequest:request, navigationType:navigationType)
@@ -120,7 +120,7 @@ class BrowserController < UIViewController
     @stop_button = UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemStop, target:self, action:'stop_loading').tap do |b|
       b.style = UIBarButtonItemStyleBordered
     end
-    @thumbnail_button = UIBarButtonItem.alloc.initWithTitle('THUMB', style:UIBarButtonItemStyleBordered, target:self, action:'open_thumbnail_view').tap do |b|
+    @images_button = UIBarButtonItem.alloc.initWithTitle('IMG', style:UIBarButtonItemStyleBordered, target:self, action:'open_images_view').tap do |b|
       b.enabled = false
     end
 
@@ -128,7 +128,7 @@ class BrowserController < UIViewController
       @back_button,
       @forward_button,
       @spacer,
-      @thumbnail_button,
+      @images_button,
       @spacer,
       @refresh_button
     ]
@@ -137,7 +137,7 @@ class BrowserController < UIViewController
   def start_observing
     # image属性をObserve
     observe(self, 'images') do |old_value, new_value|
-      @thumbnail_button.enabled = !new_value.empty?
+      @images_button.enabled = !new_value.empty?
     end
 
     # loading_count属性をObserve
@@ -150,7 +150,7 @@ class BrowserController < UIViewController
           @back_button,
           @forward_button,
           @spacer,
-          @thumbnail_button,
+          @images_button,
           @spacer,
           @refresh_button
         ]
@@ -166,7 +166,7 @@ class BrowserController < UIViewController
           @back_button,
           @forward_button,
           @spacer,
-          @thumbnail_button,
+          @images_button,
           @spacer,
           @stop_button
         ]

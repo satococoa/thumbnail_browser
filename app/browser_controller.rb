@@ -1,9 +1,15 @@
 class BrowserController < UIViewController
-  HOME_URL = 'http://satococoa.github.com/'
+  include BW::KVO
+
+  attr_accessor :images
+
+  # HOME_URL = 'http://satococoa.github.com/'
+  HOME_URL = 'http://news4vip.livedoor.biz/archives/51357270.html'
 
   def loadView
     if super
       @loading_count = 0
+      @images = []
 
       @browser = UIWebView.new.tap do |v|
         v.backgroundColor = UIColor.whiteColor
@@ -16,6 +22,11 @@ class BrowserController < UIViewController
 
       # ツールバー、URLバーを配置
       setup_browser_parts
+
+      # image属性をObserve
+      observe(self, 'images') do |old_value, new_value|
+        @thumbnail_button.enabled = !new_value.empty?
+      end
     end
     self
   end
@@ -43,7 +54,7 @@ class BrowserController < UIViewController
 
   def open_thumbnail_view
     @thumbnails_controller ||= ThumbnailsController.new
-    @thumbnails_controller.url = @browser.request.mainDocumentURL
+    @thumbnails_controller.images = @images
     presentModalViewController(@thumbnails_controller, animated:true)
   end
 
@@ -64,7 +75,7 @@ class BrowserController < UIViewController
 
   def webView(webView, didFailLoadWithError:error)
     loading_changed_not_loading(webView)
-    p error.code, error.domain, error.userInfo, error.localizedDescription
+    log_error error
     App.alert(error.localizedDescription) if error.code != NSURLErrorCancelled
   end
 
@@ -107,7 +118,9 @@ class BrowserController < UIViewController
     @stop_button = UIBarButtonItem.alloc.initWithBarButtonSystemItem(UIBarButtonSystemItemStop, target:self, action:'stop_loading').tap do |b|
       b.style = UIBarButtonItemStyleBordered
     end
-    @thumbnail_button = UIBarButtonItem.alloc.initWithTitle('THUMB', style:UIBarButtonItemStyleBordered, target:self, action:'open_thumbnail_view')
+    @thumbnail_button = UIBarButtonItem.alloc.initWithTitle('THUMB', style:UIBarButtonItemStyleBordered, target:self, action:'open_thumbnail_view').tap do |b|
+      b.enabled = false
+    end
 
     self.toolbarItems = [
       @back_button,
@@ -130,6 +143,7 @@ class BrowserController < UIViewController
         @spacer,
         @stop_button
       ]
+      self.images = []
     end
     @loading_count += 1
   end
@@ -149,6 +163,12 @@ class BrowserController < UIViewController
         @refresh_button
       ]
       UIApplication.sharedApplication.networkActivityIndicatorVisible = false
+      # パースが必要なので非同期にする
+      html = webView.stringByEvaluatingJavaScriptFromString('document.documentElement.outerHTML')
+      Dispatch::Queue.main.async {
+        doc = Document.new(html)
+        self.images = doc.image_urls
+      }
     end
   end
   end

@@ -1,5 +1,8 @@
 class ThumbnailsController < UIViewController
-  attr_accessor :url
+  # 画像のURL(NSURL)の入った配列
+  attr_accessor :images
+
+  LOADING_IMAGE = UIImage.imageNamed('loading.png')
 
   def loadView
     if super
@@ -28,53 +31,18 @@ class ThumbnailsController < UIViewController
         b.addTarget(self, action:'close', forControlEvents:UIControlEventTouchUpInside)
       end
       view.addSubview(close_button)
-
     end
     self
   end
 
   def viewWillAppear(animated)
-    #TODO: 同じURLを開いたときは画像を再取得したくない
-    super
-    # 画像のURLのみを抜き出す
-    request = NSURLRequest.requestWithURL(@url)
-    operation = AFHTTPRequestOperation.alloc.initWithRequest(request)
-    operation.setCompletionBlockWithSuccess(
-      lambda {|operation, response|
-        error_ptr = Pointer.new(:object)
-        doc = GDataXMLDocument.alloc.initWithHTMLData(operation.responseData,
-          options:0, error:error_ptr)
-        error = error_ptr[0]
-        unless error.nil?
-          p error.code, error.domain, error.userInfo, error.localizedDescription
-        end
-
-        xpath = "//a[contains(@href, '.jpg') or contains(@href, '.jpeg') or contains(@href, '.png') or contains(@href, '.gif')]/@href"
-
-        error_ptr = Pointer.new(:object)
-        links = doc.nodesForXPath(xpath, error:error_ptr)
-        unless error.nil?
-          p error.code, error.domain, error.userInfo, error.localizedDescription
-        end
-
-        links.each do |link|
-          url = NSURL.URLWithString(link.stringValue)
-          url = NSURL.URLWithString(url.path, relativeToURL:@url) if url.scheme !~ /^https?$/
-          req = NSURLRequest.requestWithURL(url)
-          opr = AFImageRequestOperation.imageRequestOperationWithRequest(req,
-            success:lambda {|image|
-              # 画像を読み込み、viewに追加
-              p image
-            })
-          @queue.addOperation(opr)
-        end
-      },
-      failure:lambda {|operation, error|
-        p "Operation Error:"
-        p error.code, error.domain, error.userInfo, error.localizedDescription
-      }
+    placeholder = UIImage.imageNamed('placeholder.png')
+    req = NSURLRequest.requestWithURL(@images.last)
+    @image_view.setImageWithURLRequest(req,
+      placeholderImage:LOADING_IMAGE,
+      success:lambda {|req, res, img| p img },
+      failure:lambda {|req, res, error| log_error error }
     )
-    @queue.addOperation(operation)
   end
 
   def close

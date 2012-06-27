@@ -39,15 +39,25 @@ class ImagesController < UIViewController
     load_images
   end
 
-  def scrollViewDidScroll(scrollView)
-    image_no = (scrollView.contentOffset.x/320.0).ceil
+  def scrollViewDidEndDecelerating(scrollView)
+    p "scrollViewDidEndDecelerating"
+    end_scroll
+  end
+
+  def scrollViewDidEndScrollingAnimation(scrollView)
+    p "scrollViewDidEndScrollingAnimation"
+    end_scroll
+  end
+
+  private
+  def end_scroll
+    image_no = (@stage.contentOffset.x/320.0).ceil
     @selected.layer.borderWidth = 0 unless @selected.nil?
     thumb = @thumbnails.subviews[image_no]
     thumb.layer.borderWidth = 2
     @selected = thumb
   end
 
-  private
   def load_images
     [@stage, @thumbnails].each do |container|
       container.subviews.each {|v| v.removeFromSuperview }

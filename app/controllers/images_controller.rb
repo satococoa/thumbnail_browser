@@ -49,6 +49,10 @@ class ImagesController < UIViewController
     @image_queue.cancelAllOperations
   end
 
+  def scrollViewDidEndDragging(scrollView, willDecelerate:decelerate)
+    end_scroll unless decelerate
+  end
+
   def scrollViewDidEndDecelerating(scrollView)
     end_scroll
   end

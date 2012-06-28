@@ -16,16 +16,17 @@ class ImageScrollView < UIScrollView
     size = bounds.size
 
     # 画像を中心に置く
-    @image_view.origin.x = if @image_view.size.width < size.width
-      (size.width - @image_view.size.width) / 2
+    x = if @image_view.size.width < size.width
+      (size.width - @image_view.size.width).to_f / 2.0
     else
       0
     end
-    @image_view.origin.y = if @image_view.size.height < size.height
-      (size.height - @image_view.size.height) / 2
+    y = if @image_view.size.height < size.height
+      (size.height - @image_view.size.height).to_f / 2.0
     else
       0
     end
+    @image_view.frame = [[x, y], [@image_view.size.width, @image_view.size.height]]
   end
 
   def viewForZoomingInScrollView(scrollView)
@@ -39,6 +40,8 @@ class ImageScrollView < UIScrollView
     self.zoomScale = 1
 
     @image_view = UIImageView.alloc.initWithImage(image)
+    @image_view.layer.borderWidth = 2
+    @image_view.layer.borderColor = UIColor.blueColor.CGColor
     addSubview(@image_view)
 
     self.contentSize = image.size
@@ -51,18 +54,11 @@ class ImageScrollView < UIScrollView
     bounds_size = bounds.size
     image_size = @image_view.bounds.size
 
-    p "[width]bounds_size: #{bounds_size.width}, image_size: #{image_size.width}"
-    p "[height]bounds_size: #{bounds_size.height}, image_size: #{image_size.height}"
-
     x_scale = bounds_size.width.to_f / image_size.width.to_f
     y_scale = bounds_size.height.to_f / image_size.height.to_f
 
-    p "y: #{y_scale}, x: #{x_scale}"
-
     min_scale = [x_scale, y_scale].min
     max_scale = 1.0 / UIScreen.mainScreen.scale
-
-    p "min: #{min_scale}, max: #{max_scale}"
 
     min_scale = max_scale if min_scale > max_scale
     self.maximumZoomScale = max_scale

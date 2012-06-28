@@ -12,12 +12,16 @@ class ImagesController < UIViewController
 
       @stage = UIScrollView.alloc.initWithFrame([[0, 0], [320, 411]]).tap do |v|
         v.pagingEnabled = true
+        v.showsVerticalScrollIndicator = false
+        v.showsHorizontalScrollIndicator = false
         v.delegate = self
       end
       view.addSubview(@stage)
 
       @thumbnails = UIScrollView.alloc.initWithFrame([[0, 411], [320, 49]]).tap do |v|
         v.pagingEnabled = true
+        v.showsVerticalScrollIndicator = false
+        v.showsHorizontalScrollIndicator = false
         v.backgroundColor = UIColor.blackColor
       end
       view.addSubview(@thumbnails)

@@ -93,10 +93,8 @@ class ImagesController < UIViewController
       stage_offset = i * 320
       thumb_offset = i/4 * 320 + i%4 * 60
 
-      stage_image = UIImageView.alloc.initWithFrame([[stage_offset+10, 10], [300, 411-20]]).tap do |stg|
-        stg.contentMode = UIViewContentModeScaleAspectFit
-        stg.image = LOADING_IMAGE
-      end
+      stage_scroll_view = ImageScrollView.alloc.initWithFrame([[stage_offset, 10], [300, 411-20]])
+      stage_scroll_view.display_image(LOADING_IMAGE)
 
       thumb_image = UIImageView.alloc.initWithFrame([[thumb_offset+50, 5], [40, 40]]).tap do |thumb|
         thumb.contentMode = UIViewContentModeScaleAspectFit
@@ -105,12 +103,12 @@ class ImagesController < UIViewController
         thumb.whenTapped { select(i) }
       end
 
-      @stage.addSubview(stage_image)
+      @stage.addSubview(stage_scroll_view)
       @thumbnails.addSubview(thumb_image)
 
       @image_views << {
         url: image_url,
-        image: stage_image,
+        view: stage_scroll_view,
         thumb: thumb_image
       }
 
@@ -118,7 +116,7 @@ class ImagesController < UIViewController
       opr = AFImageRequestOperation.imageRequestOperationWithRequest(req,
         success:lambda {|image|
           NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            stage_image.image = image
+            stage_scroll_view.display_image(image)
             thumb_image.image = image
           })
         })

@@ -56,7 +56,7 @@ class BrowserController < UIViewController
 
   def open_images_view
     @images_controller ||= ImagesController.new
-    @images_controller.images = @images
+    @images_controller.images = @images.uniq
     presentModalViewController(@images_controller, animated:true)
   end
 

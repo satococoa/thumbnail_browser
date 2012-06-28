@@ -6,7 +6,8 @@ class ImagesController < UIViewController
 
   def loadView
     if super
-      @thumb_views = []
+      @image_queue = NSOperationQueue.new
+
       view.backgroundColor = UIColor.darkGrayColor
 
       @stage = UIScrollView.alloc.initWithFrame([[0, 0], [320, 411]]).tap do |v|
@@ -39,58 +40,82 @@ class ImagesController < UIViewController
     load_images
   end
 
+  def viewDidDisappear(animated)
+    super
+    @image_queue.cancelAllOperations
+  end
+
   def scrollViewDidEndDecelerating(scrollView)
-    p "scrollViewDidEndDecelerating"
     end_scroll
   end
 
   def scrollViewDidEndScrollingAnimation(scrollView)
-    p "scrollViewDidEndScrollingAnimation"
     end_scroll
   end
 
   private
   def end_scroll
-    image_no = (@stage.contentOffset.x/320.0).ceil
-    @selected.layer.borderWidth = 0 unless @selected.nil?
-    thumb = @thumbnails.subviews[image_no]
-    thumb.layer.borderWidth = 2
-    @selected = thumb
+    image_index = (@stage.contentOffset.x/320.0).ceil
+    select(image_index)
+  end
+
+  def select(image_index)
+    deselect(@selected)
+    image_view = @image_views[image_index]
+    @stage.setContentOffset([image_index*320, 0], animated:true)
+    @thumbnails.setContentOffset([image_index/4*320, 0], animated:true)
+    image_view[:thumb].layer.borderWidth = 2
+    @selected = image_view
+  end
+
+  def deselect(image_view)
+    image_view[:thumb].layer.borderWidth = 0 unless image_view.nil?
   end
 
   def load_images
+    # [{url: u, image: UIImageView *image, thumb: UIImageView *thumb}, ...]
+    @image_views = []
     [@stage, @thumbnails].each do |container|
       container.subviews.each {|v| v.removeFromSuperview }
     end
 
     @stage.contentSize = [320*@images.count, 411-20]
     @thumbnails.contentSize = [320*(@images.count/4.0).ceil, 40]
-    @images.each_with_index do |img, i|
-      req = NSURLRequest.requestWithURL(img)
-
+    @images.each_with_index do |image_url, i|
       stage_offset = i * 320
+      thumb_offset = i/4 * 320 + i%4 * 60
+
       stage_image = UIImageView.alloc.initWithFrame([[stage_offset+10, 10], [300, 411-20]]).tap do |stg|
         stg.contentMode = UIViewContentModeScaleAspectFit
-        stg.setImageWithURLRequest(req,
-          placeholderImage:LOADING_IMAGE,
-          success:lambda {|req, res, img| p img },
-          failure:lambda {|req, res, error| log_error error }
-        )
+        stg.image = LOADING_IMAGE
       end
-      @stage.addSubview(stage_image)
 
-      thumb_offset = i/4 * 320 + i%4 * 60
       thumb_image = UIImageView.alloc.initWithFrame([[thumb_offset+50, 5], [40, 40]]).tap do |thumb|
         thumb.contentMode = UIViewContentModeScaleAspectFit
         thumb.layer.borderColor = UIColor.brownColor.CGColor
-        thumb.setImageWithURLRequest(req,
-          placeholderImage:LOADING_IMAGE,
-          success:lambda {|req, res, img| p img },
-          failure:lambda {|req, res, error| log_error error }
-        )
-        thumb.whenTapped { @stage.setContentOffset([stage_offset, 0], animated:true) }
+        thumb.image = LOADING_IMAGE
+        thumb.whenTapped { select(i) }
       end
+
+      @stage.addSubview(stage_image)
       @thumbnails.addSubview(thumb_image)
+
+      @image_views << {
+        url: image_url,
+        image: stage_image,
+        thumb: thumb_image
+      }
+
+      req = NSURLRequest.requestWithURL(image_url)
+      opr = AFImageRequestOperation.imageRequestOperationWithRequest(req,
+        success:lambda {|image|
+          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+            stage_image.image = image
+            thumb_image.image = image
+          })
+        })
+      @image_queue.addOperation(opr)
     end
+    select(0)
   end
 end

@@ -43,7 +43,7 @@ class ImageScrollView < UIScrollView
 
     self.contentSize = image.size
     set_max_min_zoom_scales_for_current_bounds
-    self.zoomScale = @minimum_zoom_scale
+    self.zoomScale = minimumZoomScale
   end
 
   private
@@ -51,14 +51,21 @@ class ImageScrollView < UIScrollView
     bounds_size = bounds.size
     image_size = @image_view.bounds.size
 
-    x_scale = bounds_size.width.to_i / image_size.width.to_i
-    y_scale = bounds_size.height.to_i / image_size.height.to_i
+    p "[width]bounds_size: #{bounds_size.width}, image_size: #{image_size.width}"
+    p "[height]bounds_size: #{bounds_size.height}, image_size: #{image_size.height}"
+
+    x_scale = bounds_size.width.to_f / image_size.width.to_f
+    y_scale = bounds_size.height.to_f / image_size.height.to_f
+
+    p "y: #{y_scale}, x: #{x_scale}"
 
     min_scale = [x_scale, y_scale].min
     max_scale = 1.0 / UIScreen.mainScreen.scale
 
+    p "min: #{min_scale}, max: #{max_scale}"
+
     min_scale = max_scale if min_scale > max_scale
-    @maximum_zoom_scale = max_scale
-    @minimum_zoom_scale = min_scale
+    self.maximumZoomScale = max_scale
+    self.minimumZoomScale = min_scale
   end
 end

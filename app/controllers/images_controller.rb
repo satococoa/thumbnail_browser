@@ -93,7 +93,7 @@ class ImagesController < UIViewController
       stage_offset = i * 320
       thumb_offset = i/4 * 320 + i%4 * 60
 
-      stage_scroll_view = ImageScrollView.alloc.initWithFrame([[stage_offset, 10], [300, 411-20]])
+      stage_scroll_view = ImageScrollView.alloc.initWithFrame([[stage_offset, 0], [320, 411]])
       stage_scroll_view.display_image(LOADING_IMAGE)
 
       thumb_image = UIImageView.alloc.initWithFrame([[thumb_offset+50, 5], [40, 40]]).tap do |thumb|

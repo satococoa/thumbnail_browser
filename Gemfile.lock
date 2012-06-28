@@ -6,6 +6,7 @@ GEM
       xcodeproj (~> 0.1.0)
     motion-cocoapods (1.0.4)
       cocoapods (>= 0.5.1)
+    motion-testflight (1.1)
     xcodeproj (0.1.0)
 
 PLATFORMS
@@ -14,3 +15,4 @@ PLATFORMS
 DEPENDENCIES
   bubble-wrap
   motion-cocoapods
+  motion-testflight

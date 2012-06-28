@@ -5,3 +5,5 @@ resources/*.momd
 resources/*.storyboardc
 vendor
 .bundle
+config.yml
+testflight_launcher.rb

@@ -92,7 +92,7 @@ class ImagesController < UIViewController
 
       thumb_image = UIImageView.alloc.initWithFrame([[thumb_offset+50, 5], [40, 40]]).tap do |thumb|
         thumb.contentMode = UIViewContentModeScaleAspectFit
-        thumb.layer.borderColor = UIColor.brownColor.CGColor
+        thumb.layer.borderColor = UIColor.orangeColor.CGColor
         thumb.image = LOADING_IMAGE
         thumb.whenTapped { select(i) }
       end

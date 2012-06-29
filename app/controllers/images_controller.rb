@@ -1,6 +1,6 @@
 class ImagesController < UIViewController
   # 画像のURL(NSURL)の入った配列
-  attr_accessor :images
+  attr_accessor :image_urls
 
   LOADING_IMAGE = UIImage.imageNamed('loading.png')
   ERROR_IMAGE = UIImage.imageNamed('error.png')
@@ -120,9 +120,9 @@ class ImagesController < UIViewController
       container.subviews.each {|v| v.removeFromSuperview }
     end
 
-    @stage.contentSize = [320*@images.count, 460]
-    @thumbnails.contentSize = [320*(@images.count/4.0).ceil, 40]
-    @images.each_with_index do |image_url, i|
+    @stage.contentSize = [320*@image_urls.count, 460]
+    @thumbnails.contentSize = [320*(@image_urls.count/4.0).ceil, 40]
+    @image_urls.each_with_index do |image_url, i|
       stage_offset = i * 320
       thumb_offset = i/4 * 320 + i%4 * 60
 

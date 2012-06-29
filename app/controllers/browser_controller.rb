@@ -1,7 +1,7 @@
 class BrowserController < UIViewController
   include BW::KVO
 
-  attr_accessor :images, :loading_count
+  attr_accessor :image_urls, :loading_count
 
   # HOME_URL = 'http://satococoa.github.com/'
   HOME_URL = 'http://burusoku-vip.com/archives/1280150.html'
@@ -9,7 +9,7 @@ class BrowserController < UIViewController
   def loadView
     if super
       @loading_count = 0
-      @images = []
+      @image_urls = []
 
       @browser = UIWebView.new.tap do |v|
         v.backgroundColor = UIColor.whiteColor
@@ -62,7 +62,7 @@ class BrowserController < UIViewController
 
   def open_images_view
     @images_controller ||= ImagesController.new
-    @images_controller.images = @images.uniq
+    @images_controller.image_urls = @image_urls.uniq
     presentModalViewController(@images_controller, animated:true)
   end
 
@@ -142,7 +142,7 @@ class BrowserController < UIViewController
 
   def start_observing
     # image属性をObserve
-    observe(self, 'images') do |old_value, new_value|
+    observe(self, 'image_urls') do |old_value, new_value|
       @images_button.enabled = !new_value.empty?
     end
 
@@ -164,7 +164,7 @@ class BrowserController < UIViewController
         html = @browser.stringByEvaluatingJavaScriptFromString('document.documentElement.outerHTML')
         Dispatch::Queue.main.async {
           doc = Document.new(html)
-          self.images = doc.image_urls
+          self.image_urls = doc.image_urls
         }
       else old_value == 0 && new_value > 0
         UIApplication.sharedApplication.networkActivityIndicatorVisible = true
@@ -176,7 +176,7 @@ class BrowserController < UIViewController
           @spacer,
           @stop_button
         ]
-        self.images = []
+        self.image_urls = []
       end
     end
   end

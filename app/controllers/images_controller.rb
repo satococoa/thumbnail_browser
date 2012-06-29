@@ -10,11 +10,22 @@ class ImagesController < UIViewController
 
       view.backgroundColor = UIColor.darkGrayColor
 
-      @stage = UIScrollView.alloc.initWithFrame([[0, 0], [320, 411]]).tap do |v|
+      @stage = UIScrollView.alloc.initWithFrame([[0, 0], [320, 460]]).tap do |v|
         v.pagingEnabled = true
         v.showsVerticalScrollIndicator = false
         v.showsHorizontalScrollIndicator = false
         v.delegate = self
+
+        double_tap = UITapGestureRecognizer.new.tap do |g|
+          g.numberOfTapsRequired = 2
+        end
+        v.addGestureRecognizer(double_tap)
+
+        single_tap = UITapGestureRecognizer.alloc.initWithTarget(
+          self, action:'toggle_hud:').tap do |g|
+          g.requireGestureRecognizerToFail(double_tap)
+        end
+        v.addGestureRecognizer(single_tap)
       end
       view.addSubview(@stage)
 
@@ -23,13 +34,14 @@ class ImagesController < UIViewController
         v.showsVerticalScrollIndicator = false
         v.showsHorizontalScrollIndicator = false
         v.backgroundColor = UIColor.blackColor
+        v.alpha = 0.6
       end
       view.addSubview(@thumbnails)
 
       @close_button = UIButton.buttonWithType(UIButtonTypeRoundedRect).tap do |b|
         b.setTitle('閉じる', forState:UIControlStateNormal)
         b.frame = [[10, 374], [60, 30]]
-        b.alpha = 0.8
+        b.alpha = 0.6
         b.when(UIControlEventTouchUpInside) do
           self.dismissModalViewControllerAnimated(true)
         end
@@ -37,6 +49,21 @@ class ImagesController < UIViewController
       view.addSubview(@close_button)
     end
     self
+  end
+
+  def toggle_hud(gesture)
+    UIView.animateWithDuration(0.5,
+      animations:lambda {
+        if @thumbnails.alpha == 0
+          @thumbnails.alpha = 0.6
+          @close_button.alpha = 0.6
+        else
+          @thumbnails.alpha = 0
+          @close_button.alpha = 0
+        end
+      }
+    )
+    @tapped = false
   end
 
   def viewWillAppear(animated)
@@ -88,13 +115,13 @@ class ImagesController < UIViewController
       container.subviews.each {|v| v.removeFromSuperview }
     end
 
-    @stage.contentSize = [320*@images.count, 411-20]
+    @stage.contentSize = [320*@images.count, 460]
     @thumbnails.contentSize = [320*(@images.count/4.0).ceil, 40]
     @images.each_with_index do |image_url, i|
       stage_offset = i * 320
       thumb_offset = i/4 * 320 + i%4 * 60
 
-      stage_scroll_view = ImageScrollView.alloc.initWithFrame([[stage_offset, 0], [320, 411]])
+      stage_scroll_view = ImageScrollView.alloc.initWithFrame([[stage_offset, 0], @stage.frame.size])
       stage_scroll_view.display_image(LOADING_IMAGE)
 
       thumb_image = UIImageView.alloc.initWithFrame([[thumb_offset+50, 5], [40, 40]]).tap do |thumb|

@@ -15,6 +15,7 @@ Motion::Project::App.setup do |app|
     app.testflight.sdk        = 'vendor/TestFlightSDK'
     app.testflight.api_token  = config['testflight']['api_token']
     app.testflight.team_token = config['testflight']['team_token']
+    app.testflight.distribution_lists = config['testflight']['distribution_lists']
 
     app.codesign_certificate = config['certificate']
     app.provisioning_profile = config['provisioning']

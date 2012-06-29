@@ -69,9 +69,9 @@ class ImageScrollView < UIScrollView
     y_scale = bounds_size.height.to_f / image_size.height.to_f
 
     min_scale = [x_scale, y_scale].min
-    # 2倍まで拡大できるようにする
+    # 2.5倍まで拡大できるようにする
     # retinaの考慮を入れて。
-    max_scale = 2.0 / UIScreen.mainScreen.scale
+    max_scale = 2.5 / UIScreen.mainScreen.scale
 
     min_scale = max_scale if min_scale > max_scale
     self.maximumZoomScale = max_scale

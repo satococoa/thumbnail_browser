@@ -68,7 +68,7 @@ class ImagesController < UIViewController
   end
 
   def select(image_index)
-    deselect(@selected)
+    deselect(@selected) unless @selected.nil?
     image_view = @image_views[image_index]
     @stage.setContentOffset([image_index*320, 0], animated:true)
     @thumbnails.setContentOffset([image_index/4*320, 0], animated:true)
@@ -77,7 +77,8 @@ class ImagesController < UIViewController
   end
 
   def deselect(image_view)
-    image_view[:thumb].layer.borderWidth = 0 unless image_view.nil?
+    image_view[:view].zoomScale = image_view[:view].minimumZoomScale
+    image_view[:thumb].layer.borderWidth = 0
   end
 
   def load_images

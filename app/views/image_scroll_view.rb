@@ -26,7 +26,7 @@ class ImageScrollView < UIScrollView
     else
       0
     end
-    @image_view.frame = [[x, y], [@image_view.size.width, @image_view.size.height]]
+    @image_view.frame = [[x, y], @image_view.size]
   end
 
   def viewForZoomingInScrollView(scrollView)
@@ -40,8 +40,6 @@ class ImageScrollView < UIScrollView
     self.zoomScale = 1
 
     @image_view = UIImageView.alloc.initWithImage(image)
-    @image_view.layer.borderWidth = 2
-    @image_view.layer.borderColor = UIColor.blueColor.CGColor
     addSubview(@image_view)
 
     self.contentSize = image.size

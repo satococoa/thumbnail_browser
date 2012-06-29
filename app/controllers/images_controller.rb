@@ -76,6 +76,11 @@ class ImagesController < UIViewController
     @image_queue.cancelAllOperations
   end
 
+  def didReceiveMemoryWarning
+    super
+    p 'Memory Warning!! on ImagesController'
+  end
+
   def scrollViewDidEndDragging(scrollView, willDecelerate:decelerate)
     end_scroll unless decelerate
   end

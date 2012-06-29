@@ -7,4 +7,8 @@ class AppDelegate
     @window.makeKeyAndVisible
     true
   end
+
+  def applicationDidReceiveMemoryWarning(application)
+    p 'Memory Warning!! on AppDelegate'
+  end
 end

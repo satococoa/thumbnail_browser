@@ -38,6 +38,12 @@ class BrowserController < UIViewController
     unobserve_all
   end
 
+  def didReceiveMemoryWarning
+    super
+    p 'Memory Warning!! on BrowserController'
+  end
+
+
   def go_back
     @browser.goBack if @browser.canGoBack
   end

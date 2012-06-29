@@ -8,8 +8,21 @@ class ImageScrollView < UIScrollView
       self.bouncesZoom = true
       self.decelerationRate = UIScrollViewDecelerationRateFast
       self.delegate = self
+      double_tap = UITapGestureRecognizer.alloc.initWithTarget(
+        self, action:'toggle_zoom').tap do |g|
+        g.numberOfTapsRequired = 2
+      end
+      self.addGestureRecognizer(double_tap)
     end
     self
+  end
+
+  def toggle_zoom
+    if self.zoomScale < maximumZoomScale
+      self.setZoomScale(maximumZoomScale, animated:true)
+    else
+      self.setZoomScale(minimumZoomScale, animated:true)
+    end
   end
 
   def layoutSubviews

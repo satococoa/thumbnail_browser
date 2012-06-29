@@ -3,6 +3,7 @@ class ImagesController < UIViewController
   attr_accessor :images
 
   LOADING_IMAGE = UIImage.imageNamed('loading.png')
+  ERROR_IMAGE = UIImage.imageNamed('error.png')
 
   def loadView
     if super
@@ -52,18 +53,17 @@ class ImagesController < UIViewController
   end
 
   def toggle_hud(gesture)
-    UIView.animateWithDuration(0.5,
-      animations:lambda {
-        if @thumbnails.alpha == 0
-          @thumbnails.alpha = 0.6
-          @close_button.alpha = 0.6
-        else
+    if @thumbnails.alpha > 0
+      UIView.animateWithDuration(0.5,
+        animations:lambda {
           @thumbnails.alpha = 0
           @close_button.alpha = 0
-        end
-      }
-    )
-    @tapped = false
+        }
+      )
+    else
+      @thumbnails.alpha = 0.6
+      @close_button.alpha = 0.6
+    end
   end
 
   def viewWillAppear(animated)
@@ -142,11 +142,18 @@ class ImagesController < UIViewController
 
       req = NSURLRequest.requestWithURL(image_url)
       opr = AFImageRequestOperation.imageRequestOperationWithRequest(req,
-        success:lambda {|image|
+        imageProcessingBlock:lambda {|image| image },
+        cacheName:nil,
+        success:lambda {|req, res, image|
           NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
             stage_scroll_view.display_image(image)
             thumb_image.image = image
           })
+        },
+        failure:lambda {|req, res, error|
+          log_error error
+          stage_scroll_view.display_image(ERROR_IMAGE)
+          thumb_image.image = ERROR_IMAGE
         })
       @image_queue.addOperation(opr)
     end

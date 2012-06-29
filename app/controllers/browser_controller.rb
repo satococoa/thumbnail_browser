@@ -4,7 +4,7 @@ class BrowserController < UIViewController
   attr_accessor :images, :loading_count
 
   # HOME_URL = 'http://satococoa.github.com/'
-  HOME_URL = 'http://news4vip.livedoor.biz/archives/51357270.html'
+  HOME_URL = 'http://burusoku-vip.com/archives/1280150.html'
 
   def loadView
     if super

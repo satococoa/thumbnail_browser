@@ -1,5 +1,5 @@
 class ImageScrollView < UIScrollView
-  attr_accessor :image_view
+  attr_accessor :index
 
   def initWithFrame(rect)
     if super

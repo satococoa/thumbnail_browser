@@ -10,10 +10,14 @@ class ImagesController < UIViewController
   def loadView
     if super
       @image_queue = NSOperationQueue.new
+
       @current_page = 0
-      @current_thumbnail_page = 0
       @visible_pages = []
       @recycled_pages = []
+
+      @current_thumbnail_page = 0
+      @visible_thumbnail_pages = []
+      @recycled_thumbnail_pages = []
 
       view.backgroundColor = UIColor.darkGrayColor
     end
@@ -26,6 +30,7 @@ class ImagesController < UIViewController
       v.showsVerticalScrollIndicator = false
       v.showsHorizontalScrollIndicator = false
       v.delegate = self
+      v.tag = 1
 
       double_tap = UITapGestureRecognizer.new.tap do |g|
         g.numberOfTapsRequired = 2
@@ -46,6 +51,8 @@ class ImagesController < UIViewController
       v.showsHorizontalScrollIndicator = false
       v.backgroundColor = UIColor.blackColor
       v.alpha = 0.6
+      v.delegate = self
+      v.tag = 2
     end
     view.addSubview(@thumbnails)
 
@@ -101,14 +108,15 @@ class ImagesController < UIViewController
     super
     p 'Memory Warning!! on ImagesController'
     @recycled_pages = []
+    @recycled_thumbnail_pages = []
   end
 
   def scrollViewDidEndDragging(scrollView, willDecelerate:decelerate)
-    end_scroll unless decelerate
+    end_scroll(scrollView.tag) unless decelerate
   end
 
   def scrollViewDidEndDecelerating(scrollView)
-    end_scroll
+    end_scroll(scrollView.tag)
   end
 
   def scrollViewDidEndScrollingAnimation(scrollView)
@@ -117,14 +125,29 @@ class ImagesController < UIViewController
     # ここでは呼ばなくてOK
   end
 
+  def thumbnail_tapped(thumb, image_index)
+    index = thumb.index*4 + image_index
+    @stage.setContentOffset([index*320, 0], animated:true)
+    self.current_page = index
+    thumb.select_image(image_index)
+  end
+
   private
-  def end_scroll
+  def end_scroll(tag)
+    if tag == 1
+      end_stage_scroll
+    else
+      end_thumbnail_scroll
+    end
+  end
+
+  def end_stage_scroll
     self.current_page = (@stage.contentOffset.x/320.0).ceil
     self.current_thumbnail_page = @current_page/4
   end
 
-  def load_thumbnail_page
-    @thumbnails.setContentOffset([@current_thumbnail_page*320, 0], animated:true)
+  def end_thumbnail_scroll
+    self.current_thumbnail_page = (@thumbnails.contentOffset.x/320.0).ceil
   end
 
   def load_page
@@ -153,7 +176,37 @@ class ImagesController < UIViewController
     end
 
     # 選択状態にする
-    @thumbs[@current_page].layer.borderWidth = 2
+    if thumb_page = @visible_thumbnail_pages.detect {|thumb_page| thumb_page.index == @current_page/4}
+      thumb_page.select_image(@current_page%4)
+    end
+  end
+
+  def load_thumbnail_page
+    # TODO: ここでいいの？
+    @thumbnails.setContentOffset([@current_thumbnail_page*320, 0], animated:true)
+
+    @visible_thumbnail_pages.each do |page|
+      if page.index < @current_thumbnail_page - 1 || page.index > @current_thumbnail_page + 1
+        page.removeFromSuperview
+        @recycled_thumbnail_pages << page
+      end
+    end
+    @visible_thumbnail_pages = @visible_thumbnail_pages - @recycled_thumbnail_pages
+
+    (@current_thumbnail_page-1).upto(@current_thumbnail_page+1) do |index|
+      next if index < 0 || index >= (@pages_count / 4.0).ceil
+
+      unless page = @visible_thumbnail_pages.detect {|page| page.index == index}
+        page_frame = [[index * 320, 0], @thumbnails.frame.size]
+        page =  @recycled_thumbnail_pages.pop.tap {|v| v.frame = page_frame unless v.nil? } || ThumbnailsView.alloc.initWithFrame(page_frame)
+        page.index = index
+        page.delegate = self
+        @thumbnails.addSubview(page)
+        @visible_thumbnail_pages << page
+        p "index start: #{index*4}"
+        page.display_images(@images[index*4, 4])
+      end
+    end
   end
 
   def deselect(index)
@@ -163,37 +216,23 @@ class ImagesController < UIViewController
     end
 
     # 2. サムネイルの選択状態を解除
-    @thumbs[index].layer.borderWidth = 0
+    if thumb_page = @visible_thumbnail_pages.detect {|thumb_page| thumb_page.index == index/4}
+      thumb_page.deselect_image(index%4)
+    end
   end
 
   def load_images
-    @images = []
-    @thumbs = []
-
     [@stage, @thumbnails].each do |container|
       container.subviews.each {|v| v.removeFromSuperview }
     end
 
     @pages_count = @image_urls.count
-
     @stage.contentSize = [320*@pages_count, 460]
     @thumbnails.contentSize = [320*(@pages_count/4.0).ceil, 40]
 
+    @images = []
     @image_urls.each_with_index do |image_url, index|
-      thumb_offset = index/4 * 320 + index%4 * 60
-      thumb_image = UIImageView.alloc.initWithFrame([[thumb_offset+50, 5], [40, 40]]).tap do |thumb|
-        thumb.contentMode = UIViewContentModeScaleAspectFit
-        thumb.layer.borderColor = UIColor.orangeColor.CGColor
-        thumb.image = LOADING_IMAGE
-        thumb.whenTapped do
-          @stage.setContentOffset([index*320, 0], animated:true)
-          self.current_page = index
-        end
-      end
-
-      @thumbnails.addSubview(thumb_image)
-
-      @thumbs << thumb_image
+      # UIImageの配列
       @images << LOADING_IMAGE
 
       req = NSURLRequest.requestWithURL(image_url)
@@ -207,7 +246,10 @@ class ImagesController < UIViewController
             @visible_pages.each do |page|
               page.display_image(image) if page.index == index
             end
-            thumb_image.image = image
+            @visible_thumbnail_pages.each do |thumb_page|
+              image_index = index%4
+              thumb_page.display_image(image, image_index) if thumb_page.index == index/4
+            end
           })
         },
         failure:lambda {|req, res, error|
@@ -218,12 +260,16 @@ class ImagesController < UIViewController
             @visible_pages.each do |page|
               page.display_image(ERROR_IMAGE) if page.index == index
             end
-            thumb_image.image = ERROR_IMAGE
+            @visible_thumbnail_pages.each do |thumb_page|
+              image_index = index%4
+              thumb_page.display_image(ERROR_IMAGE, image_index) if thumb_page.index == index/4
+            end
           })
         })
       @image_queue.addOperation(opr)
     end
 
     self.current_page = 0
+    self.current_thumbnail_page = 0
   end
 end

@@ -4,6 +4,7 @@ class ImagesController < UIViewController
   # 画像のURL(NSURL)の入った配列
   attr_accessor :image_urls, :current_page, :current_thumbnail_page
 
+  RECYCLE_BUFFER = 2
   LOADING_IMAGE = UIImage.imageNamed('loading.png')
   ERROR_IMAGE = UIImage.imageNamed('error.png')
 
@@ -153,7 +154,7 @@ class ImagesController < UIViewController
   def load_page
     # 不必要になったimage_scroll_viewを取り除く
     @visible_pages.each do |page|
-      if page.index < @current_page - 1 || page.index > @current_page + 1
+      if page.index < @current_page-RECYCLE_BUFFER || page.index > @current_page+RECYCLE_BUFFER
         page.removeFromSuperview
         @recycled_pages << page
       end
@@ -162,7 +163,7 @@ class ImagesController < UIViewController
 
     # 現在のページ + 前後のページを表示する
     # ページがリサイクル出来ない場合は新しく作る
-    (@current_page-1).upto(@current_page+1) do |index|
+    (@current_page-RECYCLE_BUFFER).upto(@current_page+RECYCLE_BUFFER) do |index|
       next if index < 0 || index >= @pages_count
 
       unless page = @visible_pages.detect {|page| page.index == index}
@@ -186,14 +187,14 @@ class ImagesController < UIViewController
 
   def load_thumbnail_page
     @visible_thumbnail_pages.each do |page|
-      if page.index < @current_thumbnail_page - 1 || page.index > @current_thumbnail_page + 1
+      if page.index < @current_thumbnail_page-RECYCLE_BUFFER || page.index > @current_thumbnail_page + RECYCLE_BUFFER
         page.removeFromSuperview
         @recycled_thumbnail_pages << page
       end
     end
     @visible_thumbnail_pages = @visible_thumbnail_pages - @recycled_thumbnail_pages
 
-    (@current_thumbnail_page-1).upto(@current_thumbnail_page+1) do |index|
+    (@current_thumbnail_page-RECYCLE_BUFFER).upto(@current_thumbnail_page+RECYCLE_BUFFER) do |index|
       next if index < 0 || index >= (@pages_count / 4.0).ceil
 
       unless page = @visible_thumbnail_pages.detect {|page| page.index == index}

@@ -100,11 +100,6 @@ class ImagesController < UIViewController
     load_images
   end
 
-  def viewDidDisappear(animated)
-    super
-    @image_queue.cancelAllOperations
-  end
-
   def didReceiveMemoryWarning
     super
     p 'Memory Warning!! on ImagesController'
@@ -206,7 +201,6 @@ class ImagesController < UIViewController
     # 選択されている画像
     if thumb_page = @visible_thumbnail_pages.detect {|page| page.index == @current_page/4 }
       image_index = @current_page % 4
-      p "選択: image_index -> #{image_index}, page -> #{current_thumbnail_page}"
       thumb_page.select_image(image_index)
     end
   end
@@ -219,19 +213,17 @@ class ImagesController < UIViewController
 
     # 2. サムネイルの選択状態を解除
     if thumb_page = @visible_thumbnail_pages.detect {|page| page.index == index/4}
-      p "thumb_page: #{thumb_page}, image_index: #{index%4}"
       thumb_page.deselect_image(index%4)
     end
   end
 
   def load_images
-    [@stage, @thumbnails].each do |container|
-      container.subviews.each {|v| v.removeFromSuperview }
-    end
-
     @pages_count = @image_urls.count
     @stage.contentSize = [320*@pages_count, 460]
     @thumbnails.contentSize = [320*(@pages_count/4.0).ceil, 40]
+    # 一番左に戻す
+    @stage.setContentOffset([0, 0], animated:false)
+    @thumbnails.setContentOffset([0, 0], animated:false)
 
     @images = []
     @image_urls.each_with_index do |image_url, index|

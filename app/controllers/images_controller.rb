@@ -2,7 +2,7 @@ class ImagesController < UIViewController
   include BW::KVO
 
   # 画像のURL(NSURL)の入った配列
-  attr_accessor :image_urls, :current_page
+  attr_accessor :image_urls, :current_page, :current_thumbnail_page
 
   LOADING_IMAGE = UIImage.imageNamed('loading.png')
   ERROR_IMAGE = UIImage.imageNamed('error.png')
@@ -11,6 +11,7 @@ class ImagesController < UIViewController
     if super
       @image_queue = NSOperationQueue.new
       @current_page = 0
+      @current_thumbnail_page = 0
       @visible_pages = []
       @recycled_pages = []
 
@@ -62,6 +63,10 @@ class ImagesController < UIViewController
       deselect(old_index) unless old_index.nil?
       load_page
     end
+
+    observe(self, 'current_thumbnail_page') do |old_index, new_index|
+      load_thumbnail_page
+    end
   end
 
   def viewDidUnload
@@ -108,12 +113,18 @@ class ImagesController < UIViewController
 
   def scrollViewDidEndScrollingAnimation(scrollView)
     # end_scroll
+    # これが発生するときはscrollViewDidEndDeceleratingも発生しているので
+    # ここでは呼ばなくてOK
   end
 
   private
   def end_scroll
     self.current_page = (@stage.contentOffset.x/320.0).ceil
-    @thumbnails.setContentOffset([@current_page/4*320, 0], animated:true)
+    self.current_thumbnail_page = @current_page/4
+  end
+
+  def load_thumbnail_page
+    @thumbnails.setContentOffset([@current_thumbnail_page*320, 0], animated:true)
   end
 
   def load_page

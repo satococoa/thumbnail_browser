@@ -244,29 +244,13 @@ class ImagesController < UIViewController
         cacheName:nil,
         success:lambda {|req, res, image|
           NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            @images[index] = image
-            # 表示されているviewだけ画像を入れ替える
-            @visible_pages.each do |page|
-              page.display_image(image) if page.index == index
-            end
-            @visible_thumbnail_pages.each do |thumb_page|
-              image_index = index%4
-              thumb_page.display_image(image, image_index) if thumb_page.index == index/4
-            end
+            replace_image(index, image)
           })
         },
         failure:lambda {|req, res, error|
           log_error error
           NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            @images[index] = ERROR_IMAGE
-            # 表示されているviewだけ画像を入れ替える
-            @visible_pages.each do |page|
-              page.display_image(ERROR_IMAGE) if page.index == index
-            end
-            @visible_thumbnail_pages.each do |thumb_page|
-              image_index = index%4
-              thumb_page.display_image(ERROR_IMAGE, image_index) if thumb_page.index == index/4
-            end
+            replace_image(index, ERROR_IMAGE)
           })
         })
       @image_queue.addOperation(opr)
@@ -275,4 +259,22 @@ class ImagesController < UIViewController
     self.current_page = 0
     self.current_thumbnail_page = 0
   end
+
+  def replace_image(index, image)
+    @images[index] = image
+    # 表示されているviewだけ画像を入れ替える
+    @visible_pages.each do |page|
+      page.display_image(image) if page.index == index
+    end
+    @visible_thumbnail_pages.each do |thumb_page|
+      image_index = index%4
+      if thumb_page.index == index/4
+        thumb_page.display_image(image, image_index)
+        if @current_thumbnail_page == thumb_page.index && @current_page%4 == image_index
+          thumb_page.select_image(image_index)
+        end
+      end
+    end
+  end
+
 end

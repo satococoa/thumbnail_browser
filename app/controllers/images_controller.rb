@@ -208,7 +208,7 @@ class ImagesController < UIViewController
             @images[index] = ERROR_IMAGE
             # 表示されているviewだけ画像を入れ替える
             @visible_pages.each do |page|
-              page.display_image(image) if page.index == index
+              page.display_image(ERROR_IMAGE) if page.index == index
             end
             thumb_image.image = ERROR_IMAGE
           })

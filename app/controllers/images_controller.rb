@@ -125,11 +125,10 @@ class ImagesController < UIViewController
     @visible_pages.each do |page|
       if page.index < @current_page - 1 || page.index > @current_page + 1
         page.removeFromSuperview
-        @recycled_pages.push @visible_pages.delete(page)
+        @recycled_pages << page
       end
     end
-
-    p "1. visible_pages: #{@visible_pages.count}, recycled_pages: #{@recycled_pages.count}"
+    @visible_pages = @visible_pages - @recycled_pages
 
     # 現在のページ + 前後のページを表示する
     # ページがリサイクル出来ない場合は新しく作る
@@ -141,12 +140,10 @@ class ImagesController < UIViewController
         page =  @recycled_pages.pop.tap {|v| v.frame = page_frame unless v.nil? } || ImageScrollView.alloc.initWithFrame(page_frame)
         page.index = index
         @stage.addSubview(page)
-        @visible_pages.push page
+        @visible_pages << page
         page.display_image(@images[index])
       end
     end
-
-    p "2. visible_pages: #{@visible_pages.count}, recycled_pages: #{@recycled_pages.count}"
 
     # 選択状態にする
     @thumbs[@current_page].layer.borderWidth = 2

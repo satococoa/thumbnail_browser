@@ -41,6 +41,7 @@ class ThumbnailsView < UIView
     img_view = UIImageView.alloc.initWithImage(image).tap do |v|
       v.contentMode = UIViewContentModeScaleAspectFit
       v.layer.borderColor = UIColor.orangeColor.CGColor
+      v.layer.borderWidth = 0
       v.whenTapped do
         delegate.thumbnail_tapped(self, image_index)
       end

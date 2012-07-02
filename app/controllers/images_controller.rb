@@ -113,14 +113,10 @@ class ImagesController < UIViewController
   private
   def end_scroll
     self.current_page = (@stage.contentOffset.x/320.0).ceil
+    @thumbnails.setContentOffset([@current_page/4*320, 0], animated:true)
   end
 
   def load_page
-    # スクロール位置の調整
-    # TODO: サムネイルから移動したときは@stageだけ操作すればいい
-    @stage.setContentOffset([@current_page*320, 0], animated:true)
-    @thumbnails.setContentOffset([@current_page/4*320, 0], animated:true)
-
     # 不必要になったimage_scroll_viewを取り除く
     @visible_pages.each do |page|
       if page.index < @current_page - 1 || page.index > @current_page + 1
@@ -179,6 +175,7 @@ class ImagesController < UIViewController
         thumb.layer.borderColor = UIColor.orangeColor.CGColor
         thumb.image = LOADING_IMAGE
         thumb.whenTapped do
+          @stage.setContentOffset([index*320, 0], animated:true)
           self.current_page = index
         end
       end

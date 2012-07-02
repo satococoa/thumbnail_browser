@@ -203,7 +203,6 @@ class ImagesController < UIViewController
         page.delegate = self
         @thumbnails.addSubview(page)
         @visible_thumbnail_pages << page
-        p "index start: #{index*4}"
         page.display_images(@images[index*4, 4])
       end
     end

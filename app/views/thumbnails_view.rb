@@ -2,7 +2,6 @@ class ThumbnailsView < UIView
   attr_accessor :index, :delegate
 
   def initWithFrame(rect)
-    p 'initWithFrame'
     if super
       @thumbnails = []
     end
@@ -10,8 +9,6 @@ class ThumbnailsView < UIView
   end
 
   def layoutSubviews
-    # 順番に置く
-    p 'layoutSubviews!!'
     @thumbnails.each_with_index do |thumb, index|
       offset = index%4 * 60 + 50
       thumb.frame = [[offset, 5], [40, 40]]
@@ -27,7 +24,6 @@ class ThumbnailsView < UIView
   end
 
   def display_images(images)
-    # 取り去る
     @thumbnails.each do |thumb|
       thumb.removeFromSuperview
     end unless @thumbnails.empty?

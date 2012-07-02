@@ -39,7 +39,7 @@ class ThumbnailsView < UIView
     @thumbnails[image_index].removeFromSuperview unless @thumbnails[image_index].nil?
 
     img_view = UIImageView.alloc.initWithImage(image).tap do |v|
-      v.contentMode = UIViewContentModeScaleAspectFill
+      v.contentMode = UIViewContentModeScaleAspectFit
       v.layer.borderColor = UIColor.orangeColor.CGColor
       v.whenTapped do
         delegate.thumbnail_tapped(self, image_index)

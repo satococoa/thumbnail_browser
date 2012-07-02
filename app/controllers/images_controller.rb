@@ -175,6 +175,9 @@ class ImagesController < UIViewController
       end
     end
 
+    # サムネイルの方もスクロールさせる
+    @thumbnails.setContentOffset([@current_page/4*320, 0], animated:true)
+
     # 選択状態にする
     if thumb_page = @visible_thumbnail_pages.detect {|thumb_page| thumb_page.index == @current_page/4}
       thumb_page.select_image(@current_page%4)
@@ -182,9 +185,6 @@ class ImagesController < UIViewController
   end
 
   def load_thumbnail_page
-    # TODO: ここでいいの？
-    @thumbnails.setContentOffset([@current_thumbnail_page*320, 0], animated:true)
-
     @visible_thumbnail_pages.each do |page|
       if page.index < @current_thumbnail_page - 1 || page.index > @current_thumbnail_page + 1
         page.removeFromSuperview

@@ -67,7 +67,7 @@ class ImageScrollView < UIScrollView
         },
         failure:lambda {|req, res, error|
           log_error error
-          @image_view.image = ERROR_IMAGE
+          v.image = ERROR_IMAGE
           setup_size
         }
       )

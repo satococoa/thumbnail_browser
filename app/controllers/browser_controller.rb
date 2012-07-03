@@ -5,8 +5,8 @@ class BrowserController < UIViewController
 
   # HOME_URL = 'http://satococoa.github.com/'
   # HOME_URL = 'http://burusoku-vip.com/archives/1280150.html'
-  HOME_URL = 'http://simapantu.blog130.fc2.com/blog-entry-506.html'
-
+  # HOME_URL = 'http://simapantu.blog130.fc2.com/blog-entry-506.html'
+  HOME_URL = 'http://nijigazo.2chblog.jp/archives/52259441.html'
 
   def loadView
     if super

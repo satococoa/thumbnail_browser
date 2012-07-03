@@ -101,6 +101,12 @@ class ImagesController < UIViewController
     load_images
   end
 
+  def viewWillDisappear(animated)
+    super
+    @recycled_pages = []
+    @recycled_thumbnail_pages = []
+  end
+
   def didReceiveMemoryWarning
     super
     p 'Memory Warning!! on ImagesController'

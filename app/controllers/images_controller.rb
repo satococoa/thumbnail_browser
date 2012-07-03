@@ -262,7 +262,7 @@ class ImagesController < UIViewController
       image_index = index%4
       if thumb_page.index == index/4
         thumb_page.display_image(image, image_index)
-        if @current_thumbnail_page == thumb_page.index && @current_page%4 == image_index
+        if @current_page/4 == thumb_page.index && @current_page%4 == image_index
           thumb_page.select_image(image_index)
         end
       end

@@ -1,6 +1,9 @@
 class ThumbnailsView < UIView
   attr_accessor :index, :delegate
 
+  LOADING_IMAGE = UIImage.imageNamed('loading.png')
+  ERROR_IMAGE = UIImage.imageNamed('error.png')
+
   def initWithFrame(rect)
     if super
       @thumbnails = []
@@ -23,28 +26,37 @@ class ThumbnailsView < UIView
     @thumbnails[image_index].layer.borderWidth = 0
   end
 
-  def display_images(images)
+  def display_images_with_urls(urls)
     @thumbnails.each do |thumb|
       thumb.removeFromSuperview
     end unless @thumbnails.empty?
 
     @thumbnails = []
-    images.each_with_index do |image, image_index|
-      display_image(image, image_index)
+    urls.each_with_index do |url, image_index|
+      display_image_with_url(url, image_index)
     end
   end
 
   # image_indexは0-3（このview内でのインデックス）
-  def display_image(image, image_index)
+  def display_image_with_url(url, image_index)
     @thumbnails[image_index].removeFromSuperview unless @thumbnails[image_index].nil?
 
-    img_view = UIImageView.alloc.initWithImage(image).tap do |v|
+    img_view = UIImageView.new.tap do |v|
       v.contentMode = UIViewContentModeScaleAspectFit
       v.layer.borderColor = UIColor.orangeColor.CGColor
       v.layer.borderWidth = 0
       v.whenTapped do
         delegate.thumbnail_tapped(self, image_index)
       end
+      req = NSURLRequest.requestWithURL(url)
+      v.setImageWithURLRequest(req, 
+        placeholderImage:LOADING_IMAGE,
+        success:lambda {|req, res, image| },
+        failure:lambda {|req, res, error|
+          log_error error
+          @image_view.image = ERROR_IMAGE
+        }
+      )
     end
     addSubview(img_view)
     @thumbnails[image_index] = img_view

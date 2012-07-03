@@ -5,8 +5,6 @@ class ImagesController < UIViewController
   attr_accessor :image_urls, :current_page, :current_thumbnail_page
 
   RECYCLE_BUFFER = 2
-  LOADING_IMAGE = UIImage.imageNamed('loading.png')
-  ERROR_IMAGE = UIImage.imageNamed('error.png')
 
   def loadView
     if super
@@ -167,12 +165,14 @@ class ImagesController < UIViewController
         page.index = index
         @stage.addSubview(page)
         @visible_pages << page
-        page.display_image(@images[index])
+        page.display_image_with_url(@image_urls[index])
       end
     end
+    p 3
 
     # サムネイルの方もスクロールさせる
     @thumbnails.setContentOffset([@current_page/4*320, 0], animated:true)
+    p 4
   end
 
   def load_thumbnail_page
@@ -194,7 +194,7 @@ class ImagesController < UIViewController
         page.delegate = self
         @thumbnails.addSubview(page)
         @visible_thumbnail_pages << page
-        page.display_images(@images[index*4, 4])
+        page.display_images_with_urls(@image_urls[index*4, 4])
       end
     end
 
@@ -221,52 +221,13 @@ class ImagesController < UIViewController
     @pages_count = @image_urls.count
     @stage.contentSize = [320*@pages_count, 460]
     @thumbnails.contentSize = [320*(@pages_count/4.0).ceil, 40]
+
     # 一番左に戻す
     @stage.setContentOffset([0, 0], animated:false)
     @thumbnails.setContentOffset([0, 0], animated:false)
 
-    @images = []
-    @image_urls.each_with_index do |image_url, index|
-      # UIImageの配列
-      @images << LOADING_IMAGE
-
-      req = NSURLRequest.requestWithURL(image_url)
-      opr = AFImageRequestOperation.imageRequestOperationWithRequest(req,
-        imageProcessingBlock:lambda {|image| image },
-        cacheName:nil,
-        success:lambda {|req, res, image|
-          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            replace_image(index, image)
-          })
-        },
-        failure:lambda {|req, res, error|
-          log_error error
-          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            replace_image(index, ERROR_IMAGE)
-          })
-        })
-      @image_queue.addOperation(opr)
-    end
-
     self.current_page = 0
     self.current_thumbnail_page = 0
-  end
-
-  def replace_image(index, image)
-    @images[index] = image
-    # 表示されているviewだけ画像を入れ替える
-    @visible_pages.each do |page|
-      page.display_image(image) if page.index == index
-    end
-    @visible_thumbnail_pages.each do |thumb_page|
-      image_index = index%4
-      if thumb_page.index == index/4
-        thumb_page.display_image(image, image_index)
-        if @current_page/4 == thumb_page.index && @current_page%4 == image_index
-          thumb_page.select_image(image_index)
-        end
-      end
-    end
   end
 
 end

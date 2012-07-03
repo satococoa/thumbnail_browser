@@ -4,7 +4,7 @@ class ImagesController < UIViewController
   # 画像のURL(NSURL)の入った配列
   attr_accessor :image_urls, :current_page, :current_thumbnail_page
 
-  RECYCLE_BUFFER = 2
+  RECYCLE_BUFFER = 3
 
   def loadView
     if super

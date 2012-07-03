@@ -168,11 +168,9 @@ class ImagesController < UIViewController
         page.display_image_with_url(@image_urls[index])
       end
     end
-    p 3
 
     # サムネイルの方もスクロールさせる
     @thumbnails.setContentOffset([@current_page/4*320, 0], animated:true)
-    p 4
   end
 
   def load_thumbnail_page

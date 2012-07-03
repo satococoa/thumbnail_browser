@@ -57,11 +57,14 @@ class ImageScrollView < UIScrollView
 
     req = NSURLRequest.requestWithURL(url)
     @image_view = UIImageView.new.tap do |v|
-      v.contentMode = UIViewContentModeScaleAspectFit
-      v.frame = [[0, 0], LOADING_IMAGE.size]
+      v.contentMode = UIViewContentModeCenter
+      v.frame = [[0, 0], self.bounds.size]
       v.setImageWithURLRequest(req, 
         placeholderImage:LOADING_IMAGE,
-        success:lambda {|req, res, image| setup_size },
+        success:lambda {|req, res, image|
+          v.contentMode = UIViewContentModeScaleAspectFit
+          setup_size
+        },
         failure:lambda {|req, res, error|
           log_error error
           @image_view.image = ERROR_IMAGE

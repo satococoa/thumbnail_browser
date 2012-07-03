@@ -4,7 +4,10 @@ class ImagesController < UIViewController
   # 画像のURL(NSURL)の入った配列
   attr_accessor :image_urls, :current_page, :current_thumbnail_page
 
-  RECYCLE_BUFFER = 3
+  # TODO: 画像の読み込みを共有したい
+  # 読み込みができたらもう片方にも入れればよさそう
+  # delegateでやることになるか
+  RECYCLE_BUFFER = 2
 
   def loadView
     if super

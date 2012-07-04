@@ -295,6 +295,7 @@ class ImagesController < UIViewController
       page.display_image_with_index(image, index%4)
       # サムネイルを選択状態に
       page.select_image(index%4) if @current_page == index
+      page.setNeedsDisplay
     end
   end
 

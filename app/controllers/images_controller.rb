@@ -293,6 +293,8 @@ class ImagesController < UIViewController
     # @thumbnailsの画像更新
     if page = @visible_thumbnail_pages.detect {|page| page.index == index/4 }
       page.display_image_with_index(image, index%4)
+      # サムネイルを選択状態に
+      page.select_image(index%4) if @current_page == index
     end
   end
 

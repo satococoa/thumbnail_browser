@@ -12,6 +12,10 @@ class ImagesController < UIViewController
   def loadView
     if super
       @image_queue = NSOperationQueue.new
+      @image_cache = NSCache.new.tap do |c|
+        c.name = 'images'
+        c.countLimit = 16
+      end
 
       @current_page = 0
       @visible_pages = []
@@ -239,24 +243,9 @@ class ImagesController < UIViewController
   end
 
   def load_image_for_page(page, url)
-    req = NSURLRequest.requestWithURL(url)
     page.display_image(LOADING_IMAGE)
     index = page.index
-    opr = AFImageRequestOperation.imageRequestOperationWithRequest(req,
-      imageProcessingBlock:lambda{|image| image},
-      cacheName:nil,
-      success:lambda {|req, res, image|
-        NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-          reload_image(image, index)
-        })
-      },
-      failure:lambda {|req, res, error|
-        log_error error
-        NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-          reload_image(ERROR_IMAGE, index)
-        })
-      })
-    @image_queue.addOperation(opr)
+    add_image_request_queue(index, url)
   end
 
   def load_images_for_thumbnails(thumbnails_view, urls)
@@ -264,21 +253,36 @@ class ImagesController < UIViewController
     thumbnails_view.remove_images
     # サムネイル画像を取得
     urls.each_with_index do |url, image_index|
-      req = NSURLRequest.requestWithURL(url)
       thumbnails_view.display_image_with_index(LOADING_IMAGE, image_index)
-      index = thumbnails_view.index
+      index = thumbnails_view.index * 4 + image_index
+      add_image_request_queue(index, url)
+    end
+  end
+
+  def add_image_request_queue(index, url)
+    if cached_image = @image_cache.objectForKey(url.absoluteString)
+      p "===== from cache / index: #{index} ====="
+      NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+        reload_image(cached_image, index)
+      })
+    else
+      p "===== from url / index: #{index} ====="
+      req = NSURLRequest.requestWithURL(url,
+        cachePolicy:NSURLRequestReturnCacheDataElseLoad,
+        timeoutInterval:60)
       opr = AFImageRequestOperation.imageRequestOperationWithRequest(req,
         imageProcessingBlock:lambda{|image| image},
         cacheName:nil,
         success:lambda {|req, res, image|
           NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            reload_image(image, index*4+image_index)
+            @image_cache.setObject(image, forKey:url.absoluteString)
+            reload_image(image, index)
           })
         },
         failure:lambda {|req, res, error|
           log_error error
           NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            reload_image(ERROR_IMAGE, index*4+image_index)
+            reload_image(ERROR_IMAGE, index)
           })
         })
       @image_queue.addOperation(opr)

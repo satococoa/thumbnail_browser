@@ -62,13 +62,17 @@ class ImageScrollView < UIScrollView
       v.setImageWithURLRequest(req, 
         placeholderImage:LOADING_IMAGE,
         success:lambda {|req, res, image|
-          v.contentMode = UIViewContentModeScaleAspectFit
-          setup_size
+          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+            v.contentMode = UIViewContentModeScaleAspectFit
+            setup_size
+          })
         },
         failure:lambda {|req, res, error|
           log_error error
-          v.image = ERROR_IMAGE
-          setup_size
+          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+            v.image = ERROR_IMAGE
+            setup_size
+          })
         }
       )
     end

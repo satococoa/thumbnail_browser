@@ -51,10 +51,15 @@ class ThumbnailsView < UIView
       req = NSURLRequest.requestWithURL(url)
       v.setImageWithURLRequest(req, 
         placeholderImage:LOADING_IMAGE,
-        success:lambda {|req, res, image| },
+        success:lambda {|req, res, image|
+          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+          })
+        },
         failure:lambda {|req, res, error|
           log_error error
-          v.image = ERROR_IMAGE
+          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+            v.image = ERROR_IMAGE
+          })
         }
       )
     end

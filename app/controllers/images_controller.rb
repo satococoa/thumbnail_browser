@@ -7,6 +7,7 @@ class ImagesController < UIViewController
   LOADING_IMAGE = UIImage.imageNamed('loading.png')
   ERROR_IMAGE = UIImage.imageNamed('error.png')
 
+  RETRY_COUNT = 2
   RECYCLE_BUFFER = 2
 
   def loadView
@@ -259,13 +260,16 @@ class ImagesController < UIViewController
     end
   end
 
-  def add_image_request_queue(index, url)
-    if cached_image = @image_cache.objectForKey(url.absoluteString)
+  def add_image_request_queue(index, url, retried = 0)
+    @processing ||= []
+    key = url.absoluteString
+    if cached_image = @image_cache.objectForKey(key)
       p "===== from cache / index: #{index} ====="
       NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
         reload_image(cached_image, index)
       })
-    else
+    elsif !@processing.include?(key)
+      @processing << key
       p "===== from url / index: #{index} ====="
       req = NSURLRequest.requestWithURL(url,
         cachePolicy:NSURLRequestReturnCacheDataElseLoad,
@@ -274,16 +278,25 @@ class ImagesController < UIViewController
         imageProcessingBlock:lambda{|image| image},
         cacheName:nil,
         success:lambda {|req, res, image|
+          @processing.delete key
           NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            @image_cache.setObject(image, forKey:url.absoluteString)
+            @image_cache.setObject(image, forKey:key)
             reload_image(image, index)
           })
         },
         failure:lambda {|req, res, error|
           log_error error
-          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            reload_image(ERROR_IMAGE, index)
-          })
+          @processing.delete key
+          # RETRY_COUNT分繰り返す
+          if retried < RETRY_COUNT
+            p "retry: #{index}"
+            add_image_request_queue(index, url, retried + 1)
+          else
+            NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+              @image_cache.setObject(ERROR_IMAGE, forKey:key)
+              reload_image(ERROR_IMAGE, index)
+            })
+          end
         })
       @image_queue.addOperation(opr)
     end
@@ -294,6 +307,7 @@ class ImagesController < UIViewController
     if page = @visible_pages.detect {|page| page.index == index }
       page.display_image(image)
     end
+
     # @thumbnailsの画像更新
     if page = @visible_thumbnail_pages.detect {|page| page.index == index/4 }
       page.display_image_with_index(image, index%4)

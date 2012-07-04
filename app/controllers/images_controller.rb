@@ -8,7 +8,7 @@ class ImagesController < UIViewController
   ERROR_IMAGE = UIImage.imageNamed('error.png')
 
   RETRY_COUNT = 2
-  RECYCLE_BUFFER = 2
+  RECYCLE_BUFFER = 1
 
   def loadView
     if super

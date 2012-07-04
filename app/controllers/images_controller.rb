@@ -13,6 +13,8 @@ class ImagesController < UIViewController
   def loadView
     if super
       @image_queue = NSOperationQueue.new
+      @processing = []
+      
       @image_cache = NSCache.new.tap do |c|
         c.name = 'images'
         c.countLimit = 16

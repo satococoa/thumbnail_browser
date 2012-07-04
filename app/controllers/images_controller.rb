@@ -104,6 +104,7 @@ class ImagesController < UIViewController
   def viewWillAppear(animated)
     super
     load_images
+    @processing = []
   end
 
   def viewWillDisappear(animated)
@@ -271,7 +272,6 @@ class ImagesController < UIViewController
   end
 
   def add_image_request_queue(index, url, retried = 0)
-    @processing ||= []
     key = url.absoluteString
     if cached_image = @image_cache.objectForKey(key)
       p "===== from cache / index: #{index} ====="

@@ -173,9 +173,9 @@ class ImagesController < UIViewController
         page_frame = [[index * 320, 0], @stage.frame.size]
         page =  @recycled_pages.pop.tap {|v| v.frame = page_frame unless v.nil? } || ImageScrollView.alloc.initWithFrame(page_frame)
         page.index = index
+        load_image_for_page(page, @image_urls[index])
         @stage.addSubview(page)
         @visible_pages << page
-        load_image_for_page(page, @image_urls[index])
       end
     end
 
@@ -200,9 +200,9 @@ class ImagesController < UIViewController
         page =  @recycled_thumbnail_pages.pop.tap {|v| v.frame = page_frame unless v.nil? } || ThumbnailsView.alloc.initWithFrame(page_frame)
         page.index = index
         page.delegate = self
+        load_images_for_thumbnails(page, @image_urls[index*4, 4])
         @thumbnails.addSubview(page)
         @visible_thumbnail_pages << page
-        load_images_for_thumbnails(page, @image_urls[index*4, 4])
       end
     end
 

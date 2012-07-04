@@ -89,7 +89,7 @@ class ImagesController < UIViewController
 
   def toggle_hud(gesture)
     if @thumbnails.alpha > 0
-      UIView.animateWithDuration(0.5,
+      UIView.animateWithDuration(0.2,
         animations:lambda {
           @thumbnails.alpha = 0
           @close_button.alpha = 0

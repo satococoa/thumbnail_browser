@@ -1,3 +1,10 @@
+# TODO: アプリが落ちる問題
+# 仮説1. メモリが開放できていない
+#   開放出来る方法を探す
+# 仮説2. 必要なオブジェクトが開放されてしまっている
+#   インスタンス変数にするか、retain, releaseをsendして確認する
+# memory warningのあとで落ちているのでどちらの可能性も有り得る
+
 class ImagesController < UIViewController
   include BW::KVO
 
@@ -110,12 +117,14 @@ class ImagesController < UIViewController
   end
 
   def viewWillDisappear(animated)
+    # TODO: このタイミングでアプリのメモリ使用量を減らしたい
     super
     @image_queue.cancelAllOperations
     unload_pages
   end
 
   def didReceiveMemoryWarning
+    # TODO: この方法ではメモリは減らせていない
     super
     p 'Memory Warning!! on ImagesController'
     @recycled_pages = []
@@ -170,6 +179,7 @@ class ImagesController < UIViewController
     end
     @visible_pages = []
     @visible_thumbnail_pages = []
+    @image_cache.removeAllObjects
   end
 
   def load_page
@@ -277,6 +287,7 @@ class ImagesController < UIViewController
     key = url.absoluteString
     if cached_image = @image_cache.objectForKey(key)
       p "===== from cache / index: #{index} ====="
+
       NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
         reload_image(cached_image, index)
       })

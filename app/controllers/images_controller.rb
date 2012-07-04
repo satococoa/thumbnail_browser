@@ -14,7 +14,7 @@ class ImagesController < UIViewController
     if super
       @image_queue = NSOperationQueue.new
       @processing = []
-      
+
       @image_cache = NSCache.new.tap do |c|
         c.name = 'images'
         c.countLimit = 16
@@ -300,9 +300,9 @@ class ImagesController < UIViewController
           log_error error
           @processing.delete key
           # RETRY_COUNT分繰り返す
-          if retried < RETRY_COUNT
-            p "retry: #{index}"
-            add_image_request_queue(index, url, retried + 1)
+          if retried <= RETRY_COUNT
+            p "retry index: #{index}, retried: #{retried} "
+            App.run_after(1.0) { add_image_request_queue(index, url, retried + 1) }
           else
             NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
               @image_cache.setObject(ERROR_IMAGE, forKey:key)

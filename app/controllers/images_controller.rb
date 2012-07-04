@@ -7,6 +7,8 @@ class ImagesController < UIViewController
   # TODO: 画像の読み込みを共有したい
   # 読み込みができたらもう片方にも入れればよさそう
   # delegateでやることになるか
+  # 読み込みも2倍のコネクションをはってしまう
+  # TODO: 他のページを開いたときにrecycle状態のサムネイルが変わらない
   RECYCLE_BUFFER = 2
 
   def loadView

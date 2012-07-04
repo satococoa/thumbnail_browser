@@ -26,42 +26,24 @@ class ThumbnailsView < UIView
     @thumbnails[image_index].layer.borderWidth = 0
   end
 
-  def display_images_with_urls(urls)
+  def remove_images
     @thumbnails.each do |thumb|
       thumb.removeFromSuperview
     end unless @thumbnails.empty?
-
     @thumbnails = []
-    urls.each_with_index do |url, image_index|
-      display_image_with_url(url, image_index)
-    end
   end
 
   # image_indexは0-3（このview内でのインデックス）
-  def display_image_with_url(url, image_index)
+  def display_image_with_index(image, image_index)
     @thumbnails[image_index].removeFromSuperview unless @thumbnails[image_index].nil?
 
-    img_view = UIImageView.new.tap do |v|
+    img_view = UIImageView.alloc.initWithImage(image).tap do |v|
       v.contentMode = UIViewContentModeScaleAspectFit
       v.layer.borderColor = UIColor.orangeColor.CGColor
       v.layer.borderWidth = 0
       v.whenTapped do
         delegate.thumbnail_tapped(self, image_index)
       end
-      req = NSURLRequest.requestWithURL(url)
-      v.setImageWithURLRequest(req, 
-        placeholderImage:LOADING_IMAGE,
-        success:lambda {|req, res, image|
-          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-          })
-        },
-        failure:lambda {|req, res, error|
-          log_error error
-          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            v.image = ERROR_IMAGE
-          })
-        }
-      )
     end
     addSubview(img_view)
     @thumbnails[image_index] = img_view

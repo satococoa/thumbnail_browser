@@ -4,6 +4,9 @@ class ImagesController < UIViewController
   # 画像のURL(NSURL)の入った配列
   attr_accessor :image_urls, :current_page, :current_thumbnail_page
 
+  LOADING_IMAGE = UIImage.imageNamed('loading.png')
+  ERROR_IMAGE = UIImage.imageNamed('error.png')
+
   # TODO: 画像の読み込みを共有したい
   # 読み込みができたらもう片方にも入れればよさそう
   # delegateでやることになるか
@@ -105,6 +108,7 @@ class ImagesController < UIViewController
 
   def viewWillDisappear(animated)
     super
+    @image_queue.cancelAllOperations
     @recycled_pages = []
     @recycled_thumbnail_pages = []
   end
@@ -176,7 +180,7 @@ class ImagesController < UIViewController
         page.index = index
         @stage.addSubview(page)
         @visible_pages << page
-        page.display_image_with_url(@image_urls[index])
+        load_image_for_page(page, @image_urls[index])
       end
     end
 
@@ -203,7 +207,7 @@ class ImagesController < UIViewController
         page.delegate = self
         @thumbnails.addSubview(page)
         @visible_thumbnail_pages << page
-        page.display_images_with_urls(@image_urls[index*4, 4])
+        load_images_for_thumbnails(page, @image_urls[index*4, 4])
       end
     end
 
@@ -237,6 +241,61 @@ class ImagesController < UIViewController
 
     self.current_page = 0
     self.current_thumbnail_page = 0
+  end
+
+  def load_images_for_thumbnails(thumbnails_view, urls)
+    # まずはサムネイルを全部クリア
+    thumbnails_view.remove_images
+    # サムネイル画像を取得
+    urls.each_with_index do |url, image_index|
+      req = NSURLRequest.requestWithURL(url)
+      thumbnails_view.display_image_with_index(LOADING_IMAGE, image_index)
+      index = thumbnails_view.index
+      opr = AFImageRequestOperation.imageRequestOperationWithRequest(req,
+        imageProcessingBlock:lambda{|image| image},
+        cacheName:nil,
+        success:lambda {|req, res, image|
+          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+            if page = @visible_thumbnail_pages.detect{|page| page.index == index}
+              page.display_image_with_index(image, image_index)
+            end
+          })
+        },
+        failure:lambda {|req, res, error|
+          log_error error
+          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+            if page = @visible_thumbnail_pages.detect{|page| page.index == index}
+              page.display_image_with_index(ERROR_IMAGE, image_index)
+            end
+          })
+        })
+      @image_queue.addOperation(opr)
+    end
+  end
+
+  def load_image_for_page(page, url)
+    req = NSURLRequest.requestWithURL(url)
+    page.display_image(LOADING_IMAGE)
+    index = page.index
+    opr = AFImageRequestOperation.imageRequestOperationWithRequest(req,
+      imageProcessingBlock:lambda{|image| image},
+      cacheName:nil,
+      success:lambda {|req, res, image|
+        NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+          if page = @visible_pages.detect{|page| page.index == index}
+            page.display_image(image)
+          end
+        })
+      },
+      failure:lambda {|req, res, error|
+        log_error error
+        NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
+          if page = @visible_pages.detect{|page| page.index == index}
+            page.display_image(ERROR_IMAGE)
+          end
+        })
+      })
+    @image_queue.addOperation(opr)
   end
 
 end

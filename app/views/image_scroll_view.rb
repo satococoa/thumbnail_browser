@@ -1,9 +1,6 @@
 class ImageScrollView < UIScrollView
   attr_accessor :index
 
-  LOADING_IMAGE = UIImage.imageNamed('loading.png')
-  ERROR_IMAGE = UIImage.imageNamed('error.png')
-
   def initWithFrame(rect)
     if super
       self.showsVerticalScrollIndicator = false
@@ -49,32 +46,12 @@ class ImageScrollView < UIScrollView
     @image_view
   end
 
-  def display_image_with_url(url)
+  def display_image(image)
     @image_view.removeFromSuperview unless @image_view.nil?
 
-    # リセット
     self.zoomScale = 1
-
-    req = NSURLRequest.requestWithURL(url)
-    @image_view = UIImageView.new.tap do |v|
-      v.contentMode = UIViewContentModeCenter
-      v.frame = [[0, 0], self.bounds.size]
-      v.setImageWithURLRequest(req, 
-        placeholderImage:LOADING_IMAGE,
-        success:lambda {|req, res, image|
-          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            v.contentMode = UIViewContentModeScaleAspectFit
-            setup_size
-          })
-        },
-        failure:lambda {|req, res, error|
-          log_error error
-          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            v.image = ERROR_IMAGE
-            setup_size
-          })
-        }
-      )
+    @image_view = UIImageView.alloc.initWithImage(image).tap do |v|
+      v.contentMode = UIViewContentModeScaleAspectFit
     end
     addSubview(@image_view)
     setup_size
@@ -82,7 +59,6 @@ class ImageScrollView < UIScrollView
 
   private
   def setup_size
-    return if @image_view.nil?
     self.contentSize = @image_view.image.size
     set_max_min_zoom_scales_for_current_bounds
     self.zoomScale = minimumZoomScale

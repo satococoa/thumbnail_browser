@@ -109,8 +109,7 @@ class ImagesController < UIViewController
   def viewWillDisappear(animated)
     super
     @image_queue.cancelAllOperations
-    @recycled_pages = []
-    @recycled_thumbnail_pages = []
+    unload_pages
   end
 
   def didReceiveMemoryWarning
@@ -157,6 +156,17 @@ class ImagesController < UIViewController
 
   def end_thumbnail_scroll
     self.current_thumbnail_page = (@thumbnails.contentOffset.x/320.0).ceil
+  end
+
+  def unload_pages
+    @visible_pages.each do |page|
+      page.removeFromSuperview
+    end
+    @visible_thumbnail_pages.each do |page|
+      page.removeFromSuperview
+    end
+    @visible_pages = []
+    @visible_thumbnail_pages = []
   end
 
   def load_page

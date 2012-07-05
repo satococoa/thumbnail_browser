@@ -1,9 +1,6 @@
 class ThumbnailsView < UIView
   attr_accessor :index, :delegate
 
-  LOADING_IMAGE = UIImage.imageNamed('loading.png')
-  ERROR_IMAGE = UIImage.imageNamed('error.png')
-
   def initWithFrame(rect)
     if super
       @thumbnails = []

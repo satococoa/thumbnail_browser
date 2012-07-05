@@ -112,7 +112,7 @@ class ImagesController < UIViewController
 
   def viewWillAppear(animated)
     super
-    load_images
+    setup_pages
     @processing = []
   end
 
@@ -253,7 +253,7 @@ class ImagesController < UIViewController
     end
   end
 
-  def load_images
+  def setup_pages
     @pages_count = @image_urls.count
     @stage.contentSize = [320*@pages_count, 460]
     @thumbnails.contentSize = [320*(@pages_count/4.0).ceil, 40]

@@ -117,18 +117,18 @@ class ImagesController < UIViewController
   end
 
   def viewWillDisappear(animated)
-    # TODO: このタイミングでアプリのメモリ使用量を減らしたい
     super
     @image_queue.cancelAllOperations
     unload_pages
+    p "================ ImagesController#retainCount: #{self.retainCount} ================"
   end
 
   def didReceiveMemoryWarning
     # TODO: この方法ではメモリは減らせていない
-    super
     p 'Memory Warning!! on ImagesController'
     @recycled_pages = []
     @recycled_thumbnail_pages = []
+    super
   end
 
   def scrollViewDidEndDragging(scrollView, willDecelerate:decelerate)

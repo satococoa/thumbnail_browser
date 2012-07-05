@@ -9,7 +9,7 @@ class ImagesController < UIViewController
   include BW::KVO
 
   # 画像のURL(NSURL)の入った配列
-  attr_accessor :image_urls, :current_page, :current_thumbnail_page
+  attr_accessor :image_urls, :current_page, :current_thumbnail_page, :parent
 
   LOADING_IMAGE = UIImage.imageNamed('loading.png')
   ERROR_IMAGE = UIImage.imageNamed('error.png')
@@ -77,7 +77,7 @@ class ImagesController < UIViewController
       b.frame = [[10, 374], [60, 30]]
       b.alpha = 0.6
       b.when(UIControlEventTouchUpInside) do
-        self.dismissModalViewControllerAnimated(true)
+        @parent.close_images(self)
       end
     end
     view.addSubview(@close_button)

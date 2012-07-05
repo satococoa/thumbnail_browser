@@ -64,9 +64,14 @@ class BrowserController < UIViewController
   end
 
   def open_images_view
-    @images_controller ||= ImagesController.new
-    @images_controller.image_urls = @image_urls.uniq
-    presentModalViewController(@images_controller, animated:true)
+    images_controller = ImagesController.new
+    images_controller.parent = self
+    images_controller.image_urls = @image_urls.uniq
+    presentModalViewController(images_controller, animated:true)
+  end
+
+  def close_images(images)
+    images.dismissModalViewControllerAnimated(true)
   end
 
   def webView(webView, shouldStartLoadWithRequest:request, navigationType:navigationType)

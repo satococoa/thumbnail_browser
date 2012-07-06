@@ -14,7 +14,13 @@ class ImageScrollView < UIScrollView
       end
       self.addGestureRecognizer(double_tap)
     end
+    p "ImageScrollView init: #{self}"
     self
+  end
+
+  def dealloc
+    p "ImageScrollView dealloc #{self}"
+    super
   end
 
   def toggle_zoom

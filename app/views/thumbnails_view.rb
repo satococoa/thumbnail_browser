@@ -1,11 +1,17 @@
 class ThumbnailsView < UIView
-  attr_accessor :index, :delegate
+  attr_accessor :index
 
   def initWithFrame(rect)
     if super
       @thumbnails = []
     end
+    p "ThumbnailsView init: #{self}"
     self
+  end
+
+  def dealloc
+    p "ThumbnailsView dealloc #{self}"
+    super
   end
 
   def layoutSubviews
@@ -38,12 +44,17 @@ class ThumbnailsView < UIView
       v.contentMode = UIViewContentModeScaleAspectFit
       v.layer.borderColor = UIColor.orangeColor.CGColor
       v.layer.borderWidth = 0
-      v.whenTapped do
-        delegate.thumbnail_tapped(self, image_index)
-      end
+      v.tag = image_index
+      v.userInteractionEnabled = true
+      tap_gesture = UITapGestureRecognizer.alloc.initWithTarget(self, action:'thumbnail_tapped:')
+      v.addGestureRecognizer(tap_gesture)
     end
     addSubview(img_view)
     @thumbnails[image_index] = img_view
+  end
+
+  def thumbnail_tapped(gesture)
+    NSNotificationCenter.defaultCenter.postNotificationName('ThumbnailTapped', object:self, userInfo:{image_index: gesture.view.tag})
   end
 
 end

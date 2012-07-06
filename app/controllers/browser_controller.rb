@@ -71,6 +71,7 @@ class BrowserController < UIViewController
   end
 
   def close_images(images)
+    images.parent = nil
     images.dismissModalViewControllerAnimated(true)
   end
 

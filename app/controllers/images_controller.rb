@@ -1,10 +1,3 @@
-# TODO: アプリが落ちる問題
-# 仮説1. メモリが開放できていない
-#   開放出来る方法を探す
-# 仮説2. 必要なオブジェクトが開放されてしまっている
-#   インスタンス変数にするか、retain, releaseをsendして確認する
-# memory warningのあとで落ちているのでどちらの可能性も有り得る
-
 class ImagesController < UIViewController
   include BW::KVO
 
@@ -29,11 +22,9 @@ class ImagesController < UIViewController
 
       @current_page = 0
       @visible_pages = []
-      @recycled_pages = []
 
       @current_thumbnail_page = 0
       @visible_thumbnail_pages = []
-      @recycled_thumbnail_pages = []
 
       view.backgroundColor = UIColor.darkGrayColor
     end
@@ -76,24 +67,18 @@ class ImagesController < UIViewController
       b.setTitle('閉じる', forState:UIControlStateNormal)
       b.frame = [[10, 374], [60, 30]]
       b.alpha = 0.6
-      b.when(UIControlEventTouchUpInside) do
-        @parent.close_images(self)
-      end
+      b.addTarget(self, action:'close', forControlEvents:UIControlEventTouchUpInside)
     end
     view.addSubview(@close_button)
-
-    observe(self, 'current_page') do |old_index, new_index|
-      deselect(old_index) unless old_index.nil?
-      load_page
-    end
-
-    observe(self, 'current_thumbnail_page') do |old_index, new_index|
-      load_thumbnail_page
-    end
   end
 
-  def viewDidUnload
-    unobserve_all
+  def dealloc
+    p "ImagesController dealloc #{self}"
+    super
+  end
+
+  def close
+    @parent.close_images(self)
   end
 
   def toggle_hud(gesture)
@@ -112,22 +97,40 @@ class ImagesController < UIViewController
 
   def viewWillAppear(animated)
     super
-    setup_pages
     @processing = []
+
+    observe(self, 'current_page') do |old_index, new_index|
+      deselect(old_index) unless old_index.nil?
+      load_page
+    end
+
+    observe(self, 'current_thumbnail_page') do |old_index, new_index|
+      load_thumbnail_page
+    end
+
+    # サムネイルのタップ
+    @thumbnail_tap_observer = NSNotificationCenter.defaultCenter.addObserverForName('ThumbnailTapped', object:nil, queue:NSOperationQueue.mainQueue, usingBlock:lambda {|notif|
+      thumb = notif.object
+      image_index = notif.userInfo[:image_index]
+      index = thumb.index*4 + image_index
+      @stage.setContentOffset([index*320, 0], animated:true)
+      self.current_page = index
+      thumb.select_image(image_index)
+    })
+
+    setup_pages
   end
 
-  def viewWillDisappear(animated)
+  def viewDidDisappear(animated)
     super
     @image_queue.cancelAllOperations
-    unload_pages
+    unobserve_all
+    NSNotificationCenter.defaultCenter.removeObserver(@thumbnail_tap_observer)
     p "================ ImagesController#retainCount: #{self.retainCount} ================"
   end
 
   def didReceiveMemoryWarning
-    # TODO: この方法ではメモリは減らせていない
     p 'Memory Warning!! on ImagesController'
-    @recycled_pages = []
-    @recycled_thumbnail_pages = []
     super
   end
 
@@ -145,14 +148,20 @@ class ImagesController < UIViewController
     # ここでは呼ばなくてOK
   end
 
-  def thumbnail_tapped(thumb, image_index)
-    index = thumb.index*4 + image_index
-    @stage.setContentOffset([index*320, 0], animated:true)
-    self.current_page = index
-    thumb.select_image(image_index)
+  private
+  def setup_pages
+    @pages_count = @image_urls.count
+    @stage.contentSize = [320*@pages_count, 460]
+    @thumbnails.contentSize = [320*(@pages_count/4.0).ceil, 40]
+
+    # 一番左に戻す
+    @stage.setContentOffset([0, 0], animated:false)
+    @thumbnails.setContentOffset([0, 0], animated:false)
+
+    self.current_page = 0
+    self.current_thumbnail_page = 0
   end
 
-  private
   def end_scroll(tag)
     if tag == 1
       end_stage_scroll
@@ -170,40 +179,33 @@ class ImagesController < UIViewController
     self.current_thumbnail_page = (@thumbnails.contentOffset.x/320.0).ceil
   end
 
-  def unload_pages
-    @visible_pages.each do |page|
-      page.removeFromSuperview
-    end
-    @visible_thumbnail_pages.each do |page|
-      page.removeFromSuperview
-    end
-    @visible_pages = []
-    @visible_thumbnail_pages = []
-    @image_cache.removeAllObjects
-  end
-
   def load_page
+    recycled_pages = []
     # 不必要になったimage_scroll_viewを取り除く
     @visible_pages.each do |page|
       if page.index < @current_page-RECYCLE_BUFFER || page.index > @current_page+RECYCLE_BUFFER
+        recycled_pages << page
         page.removeFromSuperview
-        @recycled_pages << page
       end
     end
-    @visible_pages = @visible_pages - @recycled_pages
+    @visible_pages.delete_if {|page| recycled_pages.include?(page)}
+    # TODO: 動きが怪しいので一旦recycle機能は停止
+    recycled_pages.clear
 
     # 現在のページ + 前後のページを表示する
     # ページがリサイクル出来ない場合は新しく作る
     (@current_page-RECYCLE_BUFFER).upto(@current_page+RECYCLE_BUFFER) do |index|
       next if index < 0 || index >= @pages_count
 
-      unless page = @visible_pages.detect {|page| page.index == index}
+      unless @visible_pages.any? {|pg| pg.index == index}
         page_frame = [[index * 320, 0], @stage.frame.size]
-        page =  @recycled_pages.pop.tap {|v| v.frame = page_frame unless v.nil? } || ImageScrollView.alloc.initWithFrame(page_frame)
+        page = recycled_pages.pop.tap {|v| v.frame = page_frame unless v.nil? } || ImageScrollView.alloc.initWithFrame(page_frame)
+        @visible_pages << page
+        # TODO: ここでなぜか先頭の要素のretainCountが減る
+        # もっとも、減るほうが都合はいいのだが。
         page.index = index
         load_image_for_page(page, @image_urls[index])
         @stage.addSubview(page)
-        @visible_pages << page
       end
     end
 
@@ -212,25 +214,27 @@ class ImagesController < UIViewController
   end
 
   def load_thumbnail_page
+    recycled_thumbnail_pages = []
     @visible_thumbnail_pages.each do |page|
       if page.index < @current_thumbnail_page-RECYCLE_BUFFER || page.index > @current_thumbnail_page + RECYCLE_BUFFER
+        recycled_thumbnail_pages << page
         page.removeFromSuperview
-        @recycled_thumbnail_pages << page
       end
     end
-    @visible_thumbnail_pages = @visible_thumbnail_pages - @recycled_thumbnail_pages
+    @visible_thumbnail_pages.delete_if {|page| recycled_thumbnail_pages.include?(page)}
+    # TODO: 動きが怪しいので一旦recycle機能は停止
+    recycled_thumbnail_pages.clear
 
     (@current_thumbnail_page-RECYCLE_BUFFER).upto(@current_thumbnail_page+RECYCLE_BUFFER) do |index|
       next if index < 0 || index >= (@pages_count / 4.0).ceil
 
-      unless page = @visible_thumbnail_pages.detect {|page| page.index == index}
+      unless @visible_thumbnail_pages.any? {|pg| pg.index == index}
         page_frame = [[index * 320, 0], @thumbnails.frame.size]
-        page =  @recycled_thumbnail_pages.pop.tap {|v| v.frame = page_frame unless v.nil? } || ThumbnailsView.alloc.initWithFrame(page_frame)
+        page =  recycled_thumbnail_pages.pop.tap {|v| v.frame = page_frame unless v.nil? } || ThumbnailsView.alloc.initWithFrame(page_frame)
+        @visible_thumbnail_pages << page # TODO
         page.index = index
-        page.delegate = self
         load_images_for_thumbnails(page, @image_urls[index*4, 4])
         @thumbnails.addSubview(page)
-        @visible_thumbnail_pages << page
       end
     end
 
@@ -253,32 +257,19 @@ class ImagesController < UIViewController
     end
   end
 
-  def setup_pages
-    @pages_count = @image_urls.count
-    @stage.contentSize = [320*@pages_count, 460]
-    @thumbnails.contentSize = [320*(@pages_count/4.0).ceil, 40]
-
-    # 一番左に戻す
-    @stage.setContentOffset([0, 0], animated:false)
-    @thumbnails.setContentOffset([0, 0], animated:false)
-
-    self.current_page = 0
-    self.current_thumbnail_page = 0
-  end
-
   def load_image_for_page(page, url)
     page.display_image(LOADING_IMAGE)
-    index = page.index
-    add_image_request_queue(index, url)
+    add_image_request_queue(page.index, url)
   end
 
   def load_images_for_thumbnails(thumbnails_view, urls)
     # まずはサムネイルを全部クリア
     thumbnails_view.remove_images
+
     # サムネイル画像を取得
     urls.each_with_index do |url, image_index|
-      thumbnails_view.display_image_with_index(LOADING_IMAGE, image_index)
       index = thumbnails_view.index * 4 + image_index
+      thumbnails_view.display_image_with_index(LOADING_IMAGE, image_index)
       add_image_request_queue(index, url)
     end
   end
@@ -286,14 +277,11 @@ class ImagesController < UIViewController
   def add_image_request_queue(index, url, retried = 0)
     key = url.absoluteString
     if cached_image = @image_cache.objectForKey(key)
-      p "===== from cache / index: #{index} ====="
-
       NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
         reload_image(cached_image, index)
       })
     elsif !@processing.include?(key)
       @processing << key
-      p "===== from url / index: #{index} ====="
       req = NSURLRequest.requestWithURL(url,
         cachePolicy:NSURLRequestReturnCacheDataElseLoad,
         timeoutInterval:60)
@@ -312,7 +300,6 @@ class ImagesController < UIViewController
           @processing.delete key
           # RETRY_COUNT分繰り返す
           if retried <= RETRY_COUNT
-            p "retry index: #{index}, retried: #{retried} "
             App.run_after(1.0) { add_image_request_queue(index, url, retried + 1) }
           else
             NSOperationQueue.mainQueue.addOperationWithBlock(lambda {

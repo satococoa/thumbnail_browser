@@ -119,6 +119,9 @@ class ImagesController < UIViewController
       thumb.select_image(image_index)
     })
 
+    # 画像の取得完了
+    @image_fetched_observer = NSNotificationCenter.defaultCenter.addObserver(self, selector:'image_fetched:', name:'ImageFetched', object:nil)
+
     setup_pages
   end
 
@@ -127,6 +130,7 @@ class ImagesController < UIViewController
     @image_queue.cancelAllOperations
     unobserve_all
     NSNotificationCenter.defaultCenter.removeObserver(@thumbnail_tap_observer)
+    NSNotificationCenter.defaultCenter.removeObserver(@image_fetched_observer)
     AFNetworkActivityIndicatorManager.sharedManager.enabled = false
     p "================ ImagesController#retainCount: #{self.retainCount} ================"
   end
@@ -279,9 +283,7 @@ class ImagesController < UIViewController
   def add_image_request_queue(index, url, retried = 0)
     key = url.absoluteString
     if cached_image = @image_cache.objectForKey(key)
-      NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-        reload_image(cached_image, index)
-      })
+      reload_image(cached_image, index)
     elsif !@processing.include?(key)
       @processing << key
       req = NSURLRequest.requestWithURL(url,
@@ -292,10 +294,8 @@ class ImagesController < UIViewController
         cacheName:nil,
         success:lambda {|req, res, image|
           @processing.delete key
-          NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-            @image_cache.setObject(image, forKey:key)
-            reload_image(image, index)
-          })
+          @image_cache.setObject(image, forKey:key)
+          NSNotificationCenter.defaultCenter.postNotificationName('ImageFetched', object:image, userInfo:{index: index})
         },
         failure:lambda {|req, res, error|
           log_error error
@@ -304,14 +304,18 @@ class ImagesController < UIViewController
           if retried <= RETRY_COUNT
             App.run_after(1.0) { add_image_request_queue(index, url, retried + 1) }
           else
-            NSOperationQueue.mainQueue.addOperationWithBlock(lambda {
-              @image_cache.setObject(ERROR_IMAGE, forKey:key)
-              reload_image(ERROR_IMAGE, index)
-            })
+            @image_cache.setObject(ERROR_IMAGE, forKey:key)
+            NSNotificationCenter.defaultCenter.postNotificationName('ImageFetched', object:ERROR_IMAGE, userInfo:{index: index})
           end
         })
       @image_queue.addOperation(opr)
     end
+  end
+
+  def image_fetched(notification)
+    image = notification.object
+    index = notification.userInfo[:index]
+    reload_image(image, index)
   end
 
   def reload_image(image, index)

@@ -17,7 +17,7 @@ class ImagesController < UIViewController
 
       @image_cache = NSCache.new.tap do |c|
         c.name = 'images'
-        c.countLimit = 8
+        c.countLimit = 16
       end
 
       @current_page = 0
@@ -74,6 +74,7 @@ class ImagesController < UIViewController
 
   def dealloc
     p "ImagesController dealloc #{self}"
+    clear_cached_images
     super
   end
 
@@ -132,7 +133,6 @@ class ImagesController < UIViewController
     NSNotificationCenter.defaultCenter.removeObserver(@thumbnail_tap_observer)
     NSNotificationCenter.defaultCenter.removeObserver(@image_fetched_observer)
     AFNetworkActivityIndicatorManager.sharedManager.enabled = false
-    clear_cached_images
     p "================ ImagesController#retainCount: #{self.retainCount} ================"
   end
 

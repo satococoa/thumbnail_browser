@@ -17,7 +17,7 @@ class ImagesController < UIViewController
 
       @image_cache = NSCache.new.tap do |c|
         c.name = 'images'
-        c.countLimit = 16
+        c.countLimit = 8
       end
 
       @current_page = 0
@@ -132,11 +132,13 @@ class ImagesController < UIViewController
     NSNotificationCenter.defaultCenter.removeObserver(@thumbnail_tap_observer)
     NSNotificationCenter.defaultCenter.removeObserver(@image_fetched_observer)
     AFNetworkActivityIndicatorManager.sharedManager.enabled = false
+    clear_cached_images
     p "================ ImagesController#retainCount: #{self.retainCount} ================"
   end
 
   def didReceiveMemoryWarning
     p 'Memory Warning!! on ImagesController'
+    @image_cache.removeAllObjects
     super
   end
 
@@ -281,8 +283,9 @@ class ImagesController < UIViewController
   end
 
   def add_image_request_queue(index, url, retried = 0)
-    key = url.absoluteString
-    if cached_image = @image_cache.objectForKey(key)
+    # ファイル名としても使うのでMD5する
+    key = key_for_url(url)
+    if cached_image = cached_image_for_key(key)
       reload_image(cached_image, index)
     elsif !@processing.include?(key)
       @processing << key
@@ -295,7 +298,7 @@ class ImagesController < UIViewController
         success:lambda {|req, res, image|
           @processing.delete key
           @image_cache.setObject(image, forKey:key)
-          NSNotificationCenter.defaultCenter.postNotificationName('ImageFetched', object:image, userInfo:{index: index})
+          NSNotificationCenter.defaultCenter.postNotificationName('ImageFetched', object:image, userInfo:{index: index, key: key})
         },
         failure:lambda {|req, res, error|
           log_error error
@@ -305,17 +308,74 @@ class ImagesController < UIViewController
             App.run_after(1.0) { add_image_request_queue(index, url, retried + 1) }
           else
             @image_cache.setObject(ERROR_IMAGE, forKey:key)
-            NSNotificationCenter.defaultCenter.postNotificationName('ImageFetched', object:ERROR_IMAGE, userInfo:{index: index})
+            # エラーの画像を保存する必要は無い
+            reload_image(ERROR_IMAGE, index)
           end
         })
       @image_queue.addOperation(opr)
     end
   end
 
+  def cached_image_for_key(key)
+    if cached_image = (@image_cache.objectForKey(key) || UIImage.imageWithContentsOfFile(cache_path_for_key(key)))
+      cached_image
+    else
+      nil
+    end
+  end
+
+  def key_for_url(url)
+    NSData.MD5HexDigest(
+      url.absoluteString.dataUsingEncoding(NSUTF8StringEncoding))
+  end
+
+  def file_manager
+    NSFileManager.defaultManager
+  end
+
+  def cache_dir
+    paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, true)
+    paths[0]
+  end
+
+  def clear_cached_images
+    images_dir = cache_dir.stringByAppendingPathComponent("images")
+    err_ptr = Pointer.new(:object)
+    file_manager.removeItemAtPath(images_dir, error:err_ptr)
+    error = err_ptr[0]
+    raise error if error
+  end
+
+  def cache_path_for_key(key)
+    # 画像保存のディレクトリを作る
+    # 数が多くなりそうなので分ける
+    # 頭2文字をディレクトリ名とする
+    path = cache_dir.stringByAppendingPathComponent("images/#{key[0, 2]}")
+    unless file_manager.fileExistsAtPath(path)
+      err_ptr = Pointer.new(:object)
+      file_manager.createDirectoryAtPath(path, withIntermediateDirectories:true, attributes:nil, error:err_ptr)
+      error = err_ptr[0]
+      raise error if error
+    end
+
+    path.stringByAppendingPathComponent(key)
+  end
+
   def image_fetched(notification)
     image = notification.object
     index = notification.userInfo[:index]
-    reload_image(image, index)
+    key   = notification.userInfo[:key] # ファイル名としても使う
+
+    # ファイルをローカルに保存
+    data = UIImagePNGRepresentation(image)
+
+    if file_manager.createFileAtPath(cache_path_for_key(key), contents:data, attributes:nil)
+      reload_image(image, index)
+    else
+      # 保存に失敗
+      p "Error saving image..."
+      reload_image(ERROR_IMAGE, index)
+    end
   end
 
   def reload_image(image, index)

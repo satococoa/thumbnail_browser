@@ -367,7 +367,8 @@ class ImagesController < UIViewController
     key   = notification.userInfo[:key] # ファイル名としても使う
 
     # ファイルをローカルに保存
-    data = UIImagePNGRepresentation(image)
+    # data = UIImagePNGRepresentation(image)
+    data = UIImageJPEGRepresentation(image, 0.7)
 
     if file_manager.createFileAtPath(cache_path_for_key(key), contents:data, attributes:nil)
       reload_image(image, index)

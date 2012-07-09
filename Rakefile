@@ -25,6 +25,7 @@ Motion::Project::App.setup do |app|
     dependency 'JSONKit'
     dependency 'AFNetworking'
     dependency 'GDataXML-HTML'
+    dependency 'NSData+MD5Digest'
   end
 
   app.info_plist['CFBundleDisplayName'] = 'ぶらうざ'

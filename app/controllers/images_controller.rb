@@ -98,6 +98,7 @@ class ImagesController < UIViewController
   def viewWillAppear(animated)
     super
     @processing = []
+    AFNetworkActivityIndicatorManager.sharedManager.enabled = true
 
     observe(self, 'current_page') do |old_index, new_index|
       deselect(old_index) unless old_index.nil?
@@ -126,6 +127,7 @@ class ImagesController < UIViewController
     @image_queue.cancelAllOperations
     unobserve_all
     NSNotificationCenter.defaultCenter.removeObserver(@thumbnail_tap_observer)
+    AFNetworkActivityIndicatorManager.sharedManager.enabled = false
     p "================ ImagesController#retainCount: #{self.retainCount} ================"
   end
 

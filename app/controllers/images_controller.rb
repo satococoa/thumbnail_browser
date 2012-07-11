@@ -140,9 +140,9 @@ class ImagesController < UIViewController
   end
 
   def didReceiveMemoryWarning
+    super
     p 'Memory Warning!! on ImagesController'
     @image_cache.removeAllObjects
-    super
   end
 
   def scrollViewDidEndDragging(scrollView, willDecelerate:decelerate)
@@ -239,7 +239,7 @@ class ImagesController < UIViewController
 
       unless @visible_thumbnail_pages.any? {|pg| pg.index == index}
         page_frame = [[index * 320, 0], @thumbnails.frame.size]
-        page =  recycled_thumbnail_pages.pop.tap {|v|
+        page = recycled_thumbnail_pages.pop.tap {|v|
           unless v.nil?
             v.frame = page_frame
           end

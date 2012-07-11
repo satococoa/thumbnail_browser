@@ -38,6 +38,7 @@ class BrowserController < UIViewController
   end
 
   def viewWillAppear(animated)
+    super
     # KVO
     start_observing
 
@@ -45,12 +46,11 @@ class BrowserController < UIViewController
       req = NSURLRequest.requestWithURL(NSURL.URLWithString(HOME_URL))
       @browser.loadRequest(req)
     end
-    super
   end
 
   def viewWillDisappear(animated)
-    unobserve_all
     super
+    unobserve_all
   end
 
   def go_back

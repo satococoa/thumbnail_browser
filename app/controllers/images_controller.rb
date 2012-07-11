@@ -130,8 +130,9 @@ class ImagesController < UIViewController
     super
     @image_queue.cancelAllOperations
     unobserve_all
-    NSNotificationCenter.defaultCenter.removeObserver(@thumbnail_tap_observer)
-    NSNotificationCenter.defaultCenter.removeObserver(@image_fetched_observer)
+    [@thumbnail_tap_observer, @image_fetched_observer].each do |observer|
+      NSNotificationCenter.defaultCenter.removeObserver(observer)
+    end
     AFNetworkActivityIndicatorManager.sharedManager.enabled = false
     p "================ ImagesController#retainCount: #{self.retainCount} ================"
   end

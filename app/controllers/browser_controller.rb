@@ -9,27 +9,27 @@ class BrowserController < UIViewController
   # HOME_URL = 'http://nijigazo.2chblog.jp/archives/52259441.html'
   HOME_URL = 'http://blog.livedoor.jp/darkm/archives/51420219.html'
 
-  def loadView
+  def init
     if super
       @loading_count = 0
       @image_urls = []
-
-      @browser = UIWebView.new.tap do |v|
-        v.backgroundColor = UIColor.whiteColor
-        v.frame = [[0, 0], [320, 460-44*2]]
-        v.delegate = self
-        v.scalesPageToFit = true
-      end
-      view.addSubview(@browser)
-      navigationController.toolbarHidden = false
-
-      # ツールバー、URLバーを配置
-      setup_browser_parts
     end
     self
   end
 
   def viewDidLoad
+   @browser = UIWebView.new.tap do |v|
+      v.backgroundColor = UIColor.whiteColor
+      v.frame = [[0, 0], [320, 460-44*2]]
+      v.delegate = self
+      v.scalesPageToFit = true
+    end
+    view.addSubview(@browser)
+    navigationController.toolbarHidden = false
+
+    # ツールバー、URLバーを配置
+    setup_browser_parts
+
     # KVO
     start_observing
 

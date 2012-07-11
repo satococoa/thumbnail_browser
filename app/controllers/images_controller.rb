@@ -10,7 +10,7 @@ class ImagesController < UIViewController
   RETRY_COUNT = 2
   RECYCLE_BUFFER = 2
 
-  def loadView
+  def init
     if super
       @image_queue = NSOperationQueue.new
       @processing = []
@@ -25,13 +25,12 @@ class ImagesController < UIViewController
 
       @current_thumbnail_page = 0
       @visible_thumbnail_pages = []
-
-      view.backgroundColor = UIColor.darkGrayColor
     end
     self
   end
 
   def viewDidLoad
+    view.backgroundColor = UIColor.darkGrayColor
     @stage = UIScrollView.alloc.initWithFrame([[0, 0], [320, 460]]).tap do |v|
       v.pagingEnabled = true
       v.showsVerticalScrollIndicator = false

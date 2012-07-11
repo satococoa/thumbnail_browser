@@ -134,6 +134,19 @@ class ImagesController < UIViewController
       NSNotificationCenter.defaultCenter.removeObserver(observer)
     end
     AFNetworkActivityIndicatorManager.sharedManager.enabled = false
+
+    [@visible_pages, @visible_thumbnail_pages].each do |container|
+      container.each do |page|
+        page.removeFromSuperview
+        # TODO: 一つ多めにretainしていることがあるため、ここでrelease
+        # RubyMotionのバグ？
+        if page.retainCount > 1
+          p "!!!!!!!!!! Manually released #{page} !!!!!!!!!!"
+          page.release
+        end
+      end
+      container.clear
+    end
     p "================ ImagesController#retainCount: #{self.retainCount} ================"
   end
 
@@ -198,8 +211,6 @@ class ImagesController < UIViewController
       end
     end
     @visible_pages.delete_if {|page| recycled_pages.include?(page)}
-    # TODO: 動きが怪しいので一旦recycle機能は停止
-    recycled_pages.clear
 
     # 現在のページ + 前後のページを表示する
     # ページがリサイクル出来ない場合は新しく作る
@@ -208,7 +219,13 @@ class ImagesController < UIViewController
 
       unless @visible_pages.any? {|pg| pg.index == index}
         page_frame = [[index * 320, 0], @stage.frame.size]
-        page = recycled_pages.pop.tap {|v| v.frame = page_frame unless v.nil? } || ImageScrollView.alloc.initWithFrame(page_frame)
+        page = recycled_pages.pop.tap {|v|
+          unless v.nil?
+            v.frame = page_frame
+            p v.retainCount
+            v.send(:retain) # TODO: 手動でやる必要がある
+          end
+        } || ImageScrollView.alloc.initWithFrame(page_frame)
         @visible_pages << page
         # TODO: ここでなぜか先頭の要素のretainCountが減る
         # もっとも、減るほうが都合はいいのだが。
@@ -231,15 +248,19 @@ class ImagesController < UIViewController
       end
     end
     @visible_thumbnail_pages.delete_if {|page| recycled_thumbnail_pages.include?(page)}
-    # TODO: 動きが怪しいので一旦recycle機能は停止
-    recycled_thumbnail_pages.clear
 
     (@current_thumbnail_page-RECYCLE_BUFFER).upto(@current_thumbnail_page+RECYCLE_BUFFER) do |index|
       next if index < 0 || index >= (@pages_count / 4.0).ceil
 
       unless @visible_thumbnail_pages.any? {|pg| pg.index == index}
         page_frame = [[index * 320, 0], @thumbnails.frame.size]
-        page =  recycled_thumbnail_pages.pop.tap {|v| v.frame = page_frame unless v.nil? } || ThumbnailsView.alloc.initWithFrame(page_frame)
+        page =  recycled_thumbnail_pages.pop.tap {|v|
+          unless v.nil?
+            v.frame = page_frame
+            p v.retainCount
+            v.send(:retain) # TODO: 手動でやる必要がある
+          end
+        } || ThumbnailsView.alloc.initWithFrame(page_frame)
         @visible_thumbnail_pages << page # TODO
         page.index = index
         load_images_for_thumbnails(page, @image_urls[index*4, 4])

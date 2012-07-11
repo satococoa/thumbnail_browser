@@ -17,8 +17,14 @@ class BrowserController < UIViewController
     self
   end
 
-  def viewDidLoad
-   @browser = UIWebView.new.tap do |v|
+  def didReceiveMemoryWarning
+    p 'Memory Warning!! on BrowserController'
+    super
+  end
+
+  def loadView
+    self.view = UIView.new
+    @browser = UIWebView.new.tap do |v|
       v.backgroundColor = UIColor.whiteColor
       v.frame = [[0, 0], [320, 460-44*2]]
       v.delegate = self
@@ -29,23 +35,23 @@ class BrowserController < UIViewController
 
     # ツールバー、URLバーを配置
     setup_browser_parts
+  end
 
+  def viewWillAppear(animated)
     # KVO
     start_observing
 
-    req = NSURLRequest.requestWithURL(NSURL.URLWithString(HOME_URL))
-    @browser.loadRequest(req)
-  end
-
-  def viewDidUnload
-    unobserve_all
-  end
-
-  def didReceiveMemoryWarning
+    if @browser.request.nil?
+      req = NSURLRequest.requestWithURL(NSURL.URLWithString(HOME_URL))
+      @browser.loadRequest(req)
+    end
     super
-    p 'Memory Warning!! on BrowserController'
   end
 
+  def viewWillDisappear(animated)
+    unobserve_all
+    super
+  end
 
   def go_back
     @browser.goBack if @browser.canGoBack

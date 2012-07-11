@@ -29,8 +29,11 @@ class ImagesController < UIViewController
     self
   end
 
-  def viewDidLoad
-    view.backgroundColor = UIColor.darkGrayColor
+  def loadView
+    self.view = UIView.new.tap do |v|
+      v.backgroundColor = UIColor.darkGrayColor
+    end
+
     @stage = UIScrollView.alloc.initWithFrame([[0, 0], [320, 460]]).tap do |v|
       v.pagingEnabled = true
       v.showsVerticalScrollIndicator = false

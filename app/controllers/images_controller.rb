@@ -134,19 +134,6 @@ class ImagesController < UIViewController
       NSNotificationCenter.defaultCenter.removeObserver(observer)
     end
     AFNetworkActivityIndicatorManager.sharedManager.enabled = false
-
-    [@visible_pages, @visible_thumbnail_pages].each do |container|
-      container.each do |page|
-        page.removeFromSuperview
-        # TODO: 一つ多めにretainしていることがあるため、ここでrelease
-        # RubyMotionのバグ？
-        if page.retainCount > 1
-          p "!!!!!!!!!! Manually released #{page} !!!!!!!!!!"
-          page.release
-        end
-      end
-      container.clear
-    end
     p "================ ImagesController#retainCount: #{self.retainCount} ================"
   end
 
@@ -222,13 +209,9 @@ class ImagesController < UIViewController
         page = recycled_pages.pop.tap {|v|
           unless v.nil?
             v.frame = page_frame
-            p v.retainCount
-            v.send(:retain) # TODO: 手動でやる必要がある
           end
         } || ImageScrollView.alloc.initWithFrame(page_frame)
         @visible_pages << page
-        # TODO: ここでなぜか先頭の要素のretainCountが減る
-        # もっとも、減るほうが都合はいいのだが。
         page.index = index
         load_image_for_page(page, @image_urls[index])
         @stage.addSubview(page)
@@ -257,11 +240,9 @@ class ImagesController < UIViewController
         page =  recycled_thumbnail_pages.pop.tap {|v|
           unless v.nil?
             v.frame = page_frame
-            p v.retainCount
-            v.send(:retain) # TODO: 手動でやる必要がある
           end
         } || ThumbnailsView.alloc.initWithFrame(page_frame)
-        @visible_thumbnail_pages << page # TODO
+        @visible_thumbnail_pages << page
         page.index = index
         load_images_for_thumbnails(page, @image_urls[index*4, 4])
         @thumbnails.addSubview(page)

@@ -77,6 +77,8 @@ class ImagesController < UIViewController
   def dealloc
     p "ImagesController dealloc #{self}"
     clear_cached_images
+    p @visible_pages.map {|page| "#{page}: #{page.retainCount}"}.join(", ")
+    p @visible_thumbnail_pages.map {|page| "#{page}: #{page.retainCount}"}.join(", ")
     super
   end
 
@@ -191,6 +193,7 @@ class ImagesController < UIViewController
   end
 
   def load_page
+    p "before: " + @visible_pages.map {|page| "#{page}: #{page.retainCount}"}.join(", ")
     recycled_pages = []
     # 不必要になったimage_scroll_viewを取り除く
     @visible_pages.each do |page|
@@ -220,11 +223,13 @@ class ImagesController < UIViewController
       end
     end
 
+    p "after: " + @visible_pages.map {|page| "#{page}: #{page.retainCount}"}.join(", ")
     # サムネイルの方もスクロールさせる
     @thumbnails.setContentOffset([@current_page/4*320, 0], animated:true)
   end
 
   def load_thumbnail_page
+    p "before: " + @visible_thumbnail_pages.map {|page| "#{page}: #{page.retainCount}"}.join(", ")
     recycled_thumbnail_pages = []
     @visible_thumbnail_pages.each do |page|
       if page.index < @current_thumbnail_page-RECYCLE_BUFFER || page.index > @current_thumbnail_page + RECYCLE_BUFFER
@@ -256,6 +261,7 @@ class ImagesController < UIViewController
       image_index = @current_page % 4
       thumb_page.select_image(image_index)
     end
+    p "after: " + @visible_thumbnail_pages.map {|page| "#{page}: #{page.retainCount}"}.join(", ")
   end
 
   def deselect(index)
